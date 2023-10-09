@@ -12,15 +12,20 @@ return new class extends Migration {
     {
         Schema::create('files', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('user_id')->unsigned();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->bigInteger('folder_id')->unsigned();
-            $table->foreign('folder_id')->references('id')->on('folders')->onDelete('cascade');
-            $table->string('name');
+
+            $table->unsignedBigInteger('user_id')->index();
+            $table->foreign('user_id')->references('id')->on('users');
+
+            $table->unsignedBigInteger('folder_id')->index();
+            $table->foreign('folder_id')->references('id')->on('folders');
+
+            $table->string('name')->index();
             $table->integer('size');
             $table->string('path');
-            $table->timestamp('upload_date');
             $table->string('hash');
+
+            $table->dateTime('upload_date');
+            $table->dateTime('deleted_at');
             $table->timestamps();
         });
     }

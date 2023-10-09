@@ -15,17 +15,8 @@ class File extends Model
         'name',
         'size',
         'path',
-        'upload_date',
         'hash',
+        'upload_date',
+        'deleted_at',
     ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function folder()
-    {
-        return $this->belongsTo(Folder::class, 'folder_id');
-    }
 }
