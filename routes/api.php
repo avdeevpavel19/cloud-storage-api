@@ -25,4 +25,5 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('create-folder', [FolderController::class, 'store']);
     Route::post('upload-file', [FileController::class, 'store']);
     Route::get('my/files', [FileController::class, 'getFilesByUser']);
+    Route::get('my/files/{id}', [FileController::class, 'getFileByUser']);
 });

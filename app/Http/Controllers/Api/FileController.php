@@ -34,15 +34,15 @@ class FileController extends Controller
 
             return $this->created($downloadedFile);
         } catch (\Exception $e) {
-            return $this->error($e->getMessage());
+            return $this->error('Unknown error');
         }
     }
 
-    public function getFilesByUser()
+    public function getFilesByUser(): JsonResponse
     {
         try {
             $currentUserID = \Auth::id();
-            $userFiles     = File::where('user_id', '=', $currentUserID)->get();
+            $userFiles     = File::where('user_id', $currentUserID)->get();
 
             $userFilesData = [];
 
@@ -62,7 +62,38 @@ class FileController extends Controller
 
             return $this->success($userFilesData);
         } catch (Exception $e) {
-            return $this->error($e->getMessage());
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function getFileByUser(int $id): JsonResponse
+    {
+        try {
+            $currentUserID = \Auth::id();
+
+            $userFile = File::where('user_id', $currentUserID)
+                ->where('id', $id)
+                ->first();
+
+            if ($userFile == NULL) {
+                return $this->notFound('Файл не найден');
+            }
+
+            $userFileData = [
+                'id'        => $userFile->id,
+                'user_id'   => $userFile->user_id,
+                'folder_id' => $userFile->folder_id,
+                'file'      => $userFile->file,
+                'name'      => $userFile->name,
+                'sizeMB'    => $userFile->sizeMB,
+                'format'    => $userFile->format,
+                'path'      => $userFile->path,
+                'hash'      => $userFile->hash,
+            ];
+
+            return $this->success($userFileData);
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
         }
     }
 }
