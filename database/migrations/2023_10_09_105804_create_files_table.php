@@ -20,12 +20,12 @@ return new class extends Migration {
             $table->foreign('folder_id')->references('id')->on('folders');
 
             $table->string('name')->index();
-            $table->integer('size');
+            $table->float('sizeMB');
+            $table->string('format');
             $table->string('path');
-            $table->string('hash');
+            $table->string('hash')->unique();
 
-            $table->dateTime('upload_date');
-            $table->dateTime('deleted_at');
+            $table->dateTime('deleted_at')->nullable();
             $table->timestamps();
         });
     }

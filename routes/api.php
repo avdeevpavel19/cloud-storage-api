@@ -1,6 +1,8 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\FolderController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +16,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
+
+Route::group(['middleware' => ['auth:api']], function () {
+    Route::get('user-info', [UserController::class, 'getInfo']);
+    Route::post('create-folder', [FolderController::class, 'store']);
+    Route::post('upload-file', [FileController::class, 'store']);
 });

@@ -12,11 +12,12 @@ class File extends Model
     protected $fillable = [
         'user_id',
         'folder_id',
+        'file',
         'name',
-        'size',
+        'sizeMB',
+        'format',
         'path',
         'hash',
-        'upload_date',
         'deleted_at',
     ];
 }

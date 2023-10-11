@@ -23,4 +23,9 @@ trait HttpResponse
     {
         return response()->json(['message' => $message, 'status' => $status])->setStatusCode($code);
     }
+
+    public function created($data, $status = 'created', $code = 201)
+    {
+        return response()->json(['data' => $data, 'status' => $status])->setStatusCode($code);
+    }
 }
