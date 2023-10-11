@@ -75,7 +75,7 @@ class FileController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if ($userFile == NULL) {
+            if (empty($userFile)) {
                 return $this->notFound('Файл не найден');
             }
 
@@ -94,6 +94,26 @@ class FileController extends Controller
             return $this->success($userFileData);
         } catch (Exception $e) {
             return $this->error('Unknown error');
+        }
+    }
+
+    public function download(int $id)
+    {
+        try {
+            $currentUserID = \Auth::id();
+            $file          = File::where('user_id', $currentUserID)
+                ->where('id', $id)
+                ->first();
+
+            if (empty($file)) {
+                return $this->notFound('Файл не найден');
+            }
+
+            $filePath = storage_path('app/public/' . $file->path);
+
+            return response()->download($filePath);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage());
         }
     }
 }

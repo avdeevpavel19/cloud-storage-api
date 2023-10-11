@@ -26,4 +26,5 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('upload-file', [FileController::class, 'store']);
     Route::get('my/files', [FileController::class, 'getFilesByUser']);
     Route::get('my/files/{id}', [FileController::class, 'getFileByUser']);
+    Route::get('download-file/{id}', [FileController::class, 'download']);
 });
