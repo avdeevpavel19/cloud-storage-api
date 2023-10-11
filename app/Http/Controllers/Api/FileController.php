@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\FileNotFoundException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\DeleteFileRequest;
 use App\Http\Requests\Api\UpdateNameFileRequest;
 use App\Http\Requests\Api\UploadFileRequest;
 use App\Models\File;
@@ -16,11 +17,18 @@ class FileController extends Controller
 {
     use HttpResponse;
 
-    public function store(UploadFileRequest $request, FileService $service): JsonResponse
+    private FileService $service;
+
+    public function __construct()
+    {
+        $this->service = new FileService;
+    }
+
+    public function store(UploadFileRequest $request): JsonResponse
     {
         try {
             $validatedData = $request->validated();
-            $folder        = $service->upload($validatedData['file'], $validatedData);
+            $folder        = $this->service->upload($validatedData['file'], $validatedData);
 
             $downloadedFile = [
                 'id'        => $folder->id,
@@ -119,11 +127,11 @@ class FileController extends Controller
         }
     }
 
-    public function rename(UpdateNameFileRequest $request, FileService $service, int $id): JsonResponse
+    public function rename(UpdateNameFileRequest $request, int $id): JsonResponse
     {
         try {
             $validationData = $request->validated();
-            $file           = $service->rename($validationData, $id);
+            $file           = $this->service->rename($validationData, $id);
 
             $fileData = [
                 'id'        => $file->id,
@@ -140,6 +148,16 @@ class FileController extends Controller
             return $this->success($fileData);
         } catch (Exception $e) {
             return $this->error('Unknown error');
+        }
+    }
+
+    public function deleteFiles(DeleteFileRequest $request): JsonResponse
+    {
+        $validationData = $request->validated();
+        $deletedFile    = $this->service->destroy($validationData);
+
+        if ($deletedFile == true) {
+            return $this->delete('Файлы успешно удалены');
         }
     }
 }

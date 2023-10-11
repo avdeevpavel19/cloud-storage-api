@@ -53,4 +53,35 @@ class FileService
 
         throw new FileNotFoundException('Файл не найден');
     }
+
+    public function destroy(array $data): bool
+    {
+        $currentUserID = \Auth::id();
+        $foundAll      = true;
+
+        foreach ($data['ids'] as $id) {
+            $file = File::where('user_id', $currentUserID)
+                ->where('id', $id)
+                ->first();
+
+            if (empty($file)) {
+                $foundAll = false;
+                break;
+            }
+        }
+
+        if ($foundAll) {
+            foreach ($data['ids'] as $id) {
+                $file = File::where('user_id', $currentUserID)
+                    ->where('id', $id)
+                    ->first();
+
+                $file->delete();
+            }
+
+            return true;
+        } else {
+            throw new FileNotFoundException('Один или несколько файлов не найдены');
+        }
+    }
 }
