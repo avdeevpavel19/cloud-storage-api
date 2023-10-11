@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\FileNotFoundException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpdateNameFileRequest;
 use App\Http\Requests\Api\UploadFileRequest;
 use App\Models\File;
 use App\Services\Api\FileService;
@@ -76,7 +78,7 @@ class FileController extends Controller
                 ->first();
 
             if (empty($userFile)) {
-                return $this->notFound('Файл не найден');
+                throw new FileNotFoundException('Файл не найден');
             }
 
             $userFileData = [
@@ -106,14 +108,38 @@ class FileController extends Controller
                 ->first();
 
             if (empty($file)) {
-                return $this->notFound('Файл не найден');
+                throw new FileNotFoundException('Файл не найден');
             }
 
             $filePath = storage_path('app/public/' . $file->path);
 
             return response()->download($filePath);
         } catch (Exception $e) {
-            return $this->error($e->getMessage());
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function rename(UpdateNameFileRequest $request, FileService $service, int $id): JsonResponse
+    {
+        try {
+            $validationData = $request->validated();
+            $file           = $service->rename($validationData, $id);
+
+            $fileData = [
+                'id'        => $file->id,
+                'user_id'   => $file->user_id,
+                'folder_id' => $file->folder_id,
+                'file'      => $file->file,
+                'name'      => $file->name,
+                'sizeMB'    => $file->sizeMB,
+                'format'    => $file->format,
+                'path'      => $file->path,
+                'hash'      => $file->hash,
+            ];
+
+            return $this->success($fileData);
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Api;
 
+use App\Exceptions\FileNotFoundException;
 use App\Models\File;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +15,7 @@ class FileService
         $fileSizeInMB      = $fileSize / (1024 * 1024);
         $formattedFileSize = number_format($fileSizeInMB, 2);
 
-        if ($file != NULL) {
+        if (!empty($file)) {
             $filePath = $file->store('files', 'public');
             $format   = pathinfo($file->getClientOriginalName())['extension'];
 
@@ -29,8 +30,27 @@ class FileService
                 'hash'        => $file->hashName(),
                 'uploaded_at' => Carbon::now(),
             ]);
+
+            return $downloadFile;
         }
 
-        return $downloadFile;
+        throw new FileNotFoundException('Файл не найден');
+    }
+
+    public function rename(array $data, int $id): File
+    {
+        $currentUserID = \Auth::id();
+        $file          = File::where('user_id', $currentUserID)
+            ->where('id', $id)
+            ->first();
+
+        if (!empty($file)) {
+            $file->name = $data['name'];
+            $file->save();
+
+            return $file;
+        }
+
+        throw new FileNotFoundException('Файл не найден');
     }
 }
