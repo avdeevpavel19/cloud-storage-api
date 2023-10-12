@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\DTO\Api\FolderDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
+use App\Models\Folder;
 use App\Services\Api\FolderService;
 use App\Traits\HttpResponse;
+use Exception;
 use Illuminate\Http\JsonResponse;
 
 class FolderController extends Controller
@@ -34,6 +36,27 @@ class FolderController extends Controller
 
             return $this->success($folderDTO);
         } catch (\Exception $e) {
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function getFoldersByUser(): JsonResponse
+    {
+        try {
+            $currentUserID = \Auth::id();
+            $userFolders   = Folder::where('user_id', $currentUserID)->get();
+
+            $userFoldersData = [];
+
+            foreach ($userFolders as $userFolder) {
+                $userFoldersData[] = [
+                    'id'   => $userFolder->id,
+                    'name' => $userFolder->name,
+                ];
+            }
+
+            return $this->success($userFoldersData);
+        } catch (Exception $e) {
             return $this->error('Unknown error');
         }
     }

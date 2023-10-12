@@ -29,4 +29,5 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::get('download-file/{id}', [FileController::class, 'download']);
     Route::put('my/files/rename/{id}', [FileController::class, 'rename']);
     Route::delete('my/files/', [FileController::class, 'deleteFiles']);
+    Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
 });
