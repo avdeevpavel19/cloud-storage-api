@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('login')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->bigInteger('disk_space')->default(0);
+            $table->decimal('disk_space', 10, 2)->default(0.00);
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

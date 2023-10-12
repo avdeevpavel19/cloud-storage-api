@@ -2,14 +2,16 @@
 
 namespace App\Services\Api;
 
+use App\Exceptions\diskSpaceExhaustedException;
 use App\Exceptions\FileNotFoundException;
 use App\Models\File;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 
 class FileService
 {
-    public function upload(UploadedFile $file, array $data): File
+    public function upload(UploadedFile $file, array $data)
     {
         $fileSize          = $file->getSize();
         $fileSizeInMB      = $fileSize / (1024 * 1024);
@@ -19,19 +21,29 @@ class FileService
             $filePath = $file->store('files', 'public');
             $format   = pathinfo($file->getClientOriginalName())['extension'];
 
-            $downloadFile = File::create([
-                'user_id'     => \Auth::id(),
-                'folder_id'   => (int)$data['folder_id'],
-                'file'        => $file->getClientOriginalName(),
-                'name'        => $data['name'],
-                'sizeMB'      => $formattedFileSize,
-                'format'      => $format,
-                'path'        => $filePath,
-                'hash'        => $file->hashName(),
-                'uploaded_at' => Carbon::now(),
-            ]);
+            $user             = User::where('id', \Auth::id())->first();
+            $updatedDiskSpace = (float)$user->disk_space + (float)$formattedFileSize;
 
-            return $downloadFile;
+            if ($updatedDiskSpace <= 100) {
+                $user->disk_space = $updatedDiskSpace;
+                $user->save();
+
+                $downloadFile = File::create([
+                    'user_id'     => \Auth::id(),
+                    'folder_id'   => (int)$data['folder_id'],
+                    'file'        => $file->getClientOriginalName(),
+                    'name'        => $data['name'],
+                    'sizeMB'      => $formattedFileSize,
+                    'format'      => $format,
+                    'path'        => $filePath,
+                    'hash'        => $file->hashName(),
+                    'uploaded_at' => Carbon::now(),
+                ]);
+
+                return $downloadFile;
+            } else {
+                throw new diskSpaceExhaustedException('Превышено допустимое дисковое пространство');
+            }
         }
 
         throw new FileNotFoundException('Файл не найден');
