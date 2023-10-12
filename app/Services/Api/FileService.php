@@ -68,8 +68,10 @@ class FileService
 
     public function destroy(array $data): bool
     {
-        $currentUserID = \Auth::id();
-        $foundAll      = true;
+        $currentUserID  = \Auth::id();
+        $foundAll       = true;
+        $totalSizeFiles = 0;
+        $user           = User::where('id', \Auth::id())->first();
 
         foreach ($data['ids'] as $id) {
             $file = File::where('user_id', $currentUserID)
@@ -88,8 +90,13 @@ class FileService
                     ->where('id', $id)
                     ->first();
 
+                $totalSizeFiles += $file->sizeMB;
+
                 $file->delete();
             }
+            $updatedDiskSpace = (float)$user->disk_space - (float)$totalSizeFiles;
+            $user->disk_space = $updatedDiskSpace;
+            $user->save();
 
             return true;
         } else {
