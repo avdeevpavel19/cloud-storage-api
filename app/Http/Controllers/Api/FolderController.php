@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTO\Api\FolderDTO;
+use App\Exceptions\FolderNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
+use App\Http\Requests\Api\UpdateNameFolderRequest;
 use App\Models\Folder;
 use App\Services\Api\FolderService;
 use App\Traits\HttpResponse;
@@ -14,6 +16,13 @@ use Illuminate\Http\JsonResponse;
 class FolderController extends Controller
 {
     use HttpResponse;
+
+    private FolderService $service;
+
+    public function __construct()
+    {
+        $this->service = new FolderService;
+    }
 
     /**
      * @param CreateFolderRequest $request содержащит валидированные данные для создания папки.
@@ -56,6 +65,25 @@ class FolderController extends Controller
             }
 
             return $this->success($userFoldersData);
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function rename(UpdateNameFolderRequest $request, int $id): JsonResponse
+    {
+        try {
+            $validationData = $request->validated();
+            $folder         = $this->service->rename($validationData, $id);
+
+            $userFolderData = [
+                'id'   => $folder->id,
+                'name' => $folder->name,
+            ];
+
+            return $this->success($userFolderData);
+        } catch (FolderNotFoundException $e) {
+            return $this->error($e->getMessage());
         } catch (Exception $e) {
             return $this->error('Unknown error');
         }
