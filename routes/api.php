@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 //    return $request->user();
 //});
 
-Route::group(['middleware' => ['auth:api']], function () {
+Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::get('user-info', [UserController::class, 'getInfo']);
     Route::post('create-folder', [FolderController::class, 'store']);
     Route::post('upload-file', [FileController::class, 'store']);
