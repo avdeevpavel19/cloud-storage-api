@@ -31,4 +31,5 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::delete('my/files/', [FileController::class, 'deleteFiles']);
     Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
     Route::put('my/folders/rename/{id}', [FolderController::class, 'rename']);
+    Route::delete('my/folders/', [FolderController::class, 'deleteFolders']);
 });

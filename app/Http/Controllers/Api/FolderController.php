@@ -6,6 +6,7 @@ use App\DTO\Api\FolderDTO;
 use App\Exceptions\FolderNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
+use App\Http\Requests\Api\DeleteFolderRequest;
 use App\Http\Requests\Api\UpdateNameFolderRequest;
 use App\Models\Folder;
 use App\Services\Api\FolderService;
@@ -39,7 +40,6 @@ class FolderController extends Controller
             $folderDTO = new FolderDTO(
                 $folder->id,
                 $folder->user_id,
-                $folder->parent_folder_id,
                 $folder->name,
             );
 
@@ -84,6 +84,22 @@ class FolderController extends Controller
             return $this->success($userFolderData);
         } catch (FolderNotFoundException $e) {
             return $this->error($e->getMessage());
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function deleteFolders(DeleteFolderRequest $request): JsonResponse
+    {
+        try {
+            $validationData = $request->validated();
+            $deletedFile    = $this->service->destroy($validationData);
+
+            if ($deletedFile == true) {
+                return $this->delete('Папка успешно удалена');
+            }
+        } catch (FolderNotFoundException $exception) {
+            return $this->error($exception->getMessage());
         } catch (Exception $e) {
             return $this->error('Unknown error');
         }

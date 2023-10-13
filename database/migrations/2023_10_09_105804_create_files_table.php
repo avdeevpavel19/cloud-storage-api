@@ -16,8 +16,8 @@ return new class extends Migration {
             $table->unsignedBigInteger('user_id')->index();
             $table->foreign('user_id')->references('id')->on('users');
 
-            $table->unsignedBigInteger('folder_id')->index();
-            $table->foreign('folder_id')->references('id')->on('folders');
+            $table->unsignedBigInteger('folder_id')->index()->nullable();
+            $table->foreign('folder_id')->references('id')->on('folders')->onDelete('set null');
 
             $table->string('name')->index();
             $table->float('sizeMB');
@@ -25,7 +25,7 @@ return new class extends Migration {
             $table->string('path');
             $table->string('hash')->unique();
 
-            $table->dateTime('deleted_at')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

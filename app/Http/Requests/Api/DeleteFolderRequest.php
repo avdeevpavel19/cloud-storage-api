@@ -3,9 +3,8 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class CreateFolderRequest extends FormRequest
+class DeleteFolderRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,17 +22,15 @@ class CreateFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('folders', 'name')],
+            'ids' => ['required', 'array', 'exists:folders,id'],
         ];
     }
 
     public function messages()
     {
         return [
-            'name.required' => 'Имя обязательно для заполнения.',
-            'name.string'   => 'Имя должно быть строкой.',
-            'name.max'      => 'Имя не должно превышать 255 символов.',
-            'name.unique'   => 'Папка с таким именем уже существует.',
+            'ids.required' => ':attribute обязателен для заполнения.',
+            'ids.exists'   => 'Указанной папки не существует.',
         ];
     }
 }

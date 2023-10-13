@@ -10,12 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('folders', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('name');
-            $table->timestamps();
+        Schema::table('folders', function (Blueprint $table) {
+            $table->softDeletes()->after('name');
         });
     }
 
@@ -24,6 +20,8 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('folders');
+        Schema::table('folders', function (Blueprint $table) {
+            //
+        });
     }
 };
