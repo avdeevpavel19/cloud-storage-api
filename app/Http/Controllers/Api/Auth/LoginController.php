@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Services\Api\Auth\LoginService;
 use App\Traits\HttpResponse;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
@@ -31,6 +32,18 @@ class LoginController extends Controller
             return $this->notFound('Неверный логин или пароль');
         } catch (\Exception $e) {
             return $this->error('Unknown error');
+        }
+    }
+
+    public function logout()
+    {
+        try {
+            $user = \Auth::user();
+            $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
+
+            return response()->json(['message' => 'Вы вышли из аккаунта']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Unknown error']);
         }
     }
 }

@@ -16,3 +16,7 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('/email/verification-notification', [VerificationController::class, 'sendVerificationNotification']);
     Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
 });
+
+Route::group(['middleware' => ['auth:api', 'verified']], function () {
+    Route::post('/logout', [LoginController::class, 'logout']);
+});
