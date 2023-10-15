@@ -4,6 +4,7 @@ namespace App\Services\Api;
 
 use App\Events\FolderDeletingEvent;
 use App\Exceptions\FolderNotFoundException;
+use App\Models\File;
 use App\Models\Folder;
 
 class FolderService
@@ -44,7 +45,8 @@ class FolderService
     public function destroy(array $data): bool
     {
         $currentUserID = \Auth::id();
-        $foundAll      = true;
+//        $absentFolderId      = NULL;
+        $foundAll = true;
 
         foreach ($data['ids'] as $id) {
             $folder = Folder::where('user_id', $currentUserID)
@@ -52,6 +54,7 @@ class FolderService
                 ->first();
 
             if (empty($folder)) {
+//                $absentFolderId = $id;
                 $foundAll = false;
                 break;
             }
@@ -63,14 +66,14 @@ class FolderService
                     ->where('id', $id)
                     ->first();
 
-                event(new FolderDeletingEvent($folder));
+                File::where('folder_id', $folder->id)->update(['deleted_at' => now()]);
 
                 $folder->delete();
             }
 
             return true;
         } else {
-            throw new FolderNotFoundException('Папка не найдена');
+            throw new FolderNotFoundException("Папка не найдена");
         }
     }
 }
