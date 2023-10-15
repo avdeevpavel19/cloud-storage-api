@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\VerificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\RegisterController;
@@ -11,6 +12,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('create-user', [RegisterController::class, 'store']);
 Route::post('login', [LoginController::class, 'store']);
+
+Route::post('password/reset-link', [PasswordResetController::class, 'sendLinkEmail']);
+Route::post('password/reset/{token}', [PasswordResetController::class, 'reset']);
 
 Route::group(['middleware' => ['auth:api']], function () {
     Route::post('/email/verification-notification', [VerificationController::class, 'sendVerificationNotification']);

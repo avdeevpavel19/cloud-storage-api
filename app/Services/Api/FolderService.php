@@ -2,7 +2,6 @@
 
 namespace App\Services\Api;
 
-use App\Events\FolderDeletingEvent;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
 use App\Models\Folder;
