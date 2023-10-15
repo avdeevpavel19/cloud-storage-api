@@ -32,4 +32,5 @@ Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
     Route::put('my/folders/rename/{id}', [FolderController::class, 'rename']);
     Route::delete('my/folders/', [FolderController::class, 'deleteFolders']);
+    Route::put('update-login', [UserController::class, 'updateLogin']);
 });
