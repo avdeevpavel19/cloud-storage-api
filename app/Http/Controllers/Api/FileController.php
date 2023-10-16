@@ -8,9 +8,11 @@ use App\Http\Requests\Api\DeleteFileRequest;
 use App\Http\Requests\Api\UpdateNameFileRequest;
 use App\Http\Requests\Api\UploadFileRequest;
 use App\Models\File;
+use App\Models\Folder;
 use App\Services\Api\FileService;
 use App\Traits\HttpResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Mockery\Exception;
 
 class FileController extends Controller
@@ -158,6 +160,46 @@ class FileController extends Controller
 
         if ($deletedFile == true) {
             return $this->delete('Файлы успешно удалены');
+        }
+    }
+
+    public function getSizeFilesInFolder(Request $request): JsonResponse
+    {
+        try {
+            $userOwnedFolder = Folder::where('id', $request->folder_id)->where('user_id', \Auth::id())->first();
+
+            if (empty($userOwnedFolder)) {
+                return $this->notFound('Папка не найдена');
+            }
+
+            $filesInFolder = File::where('folder_id', $userOwnedFolder->id)->whereNull('deleted_at')->get();
+
+            $totalSizeFilesInFolder = 0;
+
+            foreach ($filesInFolder as $fileInFolder) {
+                $totalSizeFilesInFolder += $fileInFolder['sizeMB'];
+            }
+
+            return $this->success("Размер всех файлов в папке ({$userOwnedFolder->id}) - $totalSizeFilesInFolder MB");
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function getSizeFilesOnDisk()
+    {
+        try {
+            $filesUser = File::where('user_id', \Auth::id())->whereNull('deleted_at')->get();
+
+            $totalSizeFiles = 0;
+
+            foreach ($filesUser as $fileUser) {
+                $totalSizeFiles += $fileUser->sizeMB;
+            }
+
+            return $this->success("Размер всех файлов на вашем диске - $totalSizeFiles MB");
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
         }
     }
 }

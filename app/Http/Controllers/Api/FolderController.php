@@ -106,27 +106,4 @@ class FolderController extends Controller
             return $this->error('Unknown error');
         }
     }
-
-    public function getSizeFilesInFolder(Request $request): JsonResponse
-    {
-        try {
-            $userOwnedFolder = Folder::where('id', $request->folder_id)->where('user_id', \Auth::id())->first();
-
-            if (empty($userOwnedFolder)) {
-                return $this->notFound('Папка не найдена');
-            }
-
-            $filesInFolder = File::where('folder_id', $userOwnedFolder->id)->whereNull('deleted_at')->get();
-
-            $totalSizeFilesInFolder = 0;
-
-            foreach ($filesInFolder as $fileInFolder) {
-                $totalSizeFilesInFolder += $fileInFolder['sizeMB'];
-            }
-
-            return $this->success("Размер всех файлов в папке ({$userOwnedFolder->id}) - $totalSizeFilesInFolder MB");
-        } catch (Exception $e) {
-            return $this->error($e->getMessage());
-        }
-    }
 }

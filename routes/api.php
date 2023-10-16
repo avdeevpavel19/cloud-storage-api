@@ -35,5 +35,6 @@ Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::put('update-login', [UserController::class, 'updateLogin']);
     Route::post('update-email-notification', [UserController::class, 'sendEmailUpdate']);
     Route::get('update-email/{hash}', [UserController::class, 'updateEmail']);
-    Route::get('my/folder/files-size', [FolderController::class, 'getSizeFilesInFolder']);
+    Route::get('my/folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
+    Route::get('my/disk/files-size', [FileController::class, 'getSizeFilesOnDisk']);
 });
