@@ -8,11 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
 use App\Http\Requests\Api\DeleteFolderRequest;
 use App\Http\Requests\Api\UpdateNameFolderRequest;
+use App\Models\File;
 use App\Models\Folder;
 use App\Services\Api\FolderService;
 use App\Traits\HttpResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class FolderController extends Controller
 {
@@ -102,6 +104,29 @@ class FolderController extends Controller
             return $this->error($exception->getMessage());
         } catch (Exception $e) {
             return $this->error('Unknown error');
+        }
+    }
+
+    public function getSizeFilesInFolder(Request $request): JsonResponse
+    {
+        try {
+            $userOwnedFolder = Folder::where('id', $request->folder_id)->where('user_id', \Auth::id())->first();
+
+            if (empty($userOwnedFolder)) {
+                return $this->notFound('Папка не найдена');
+            }
+
+            $filesInFolder = File::where('folder_id', $userOwnedFolder->id)->whereNull('deleted_at')->get();
+
+            $totalSizeFilesInFolder = 0;
+
+            foreach ($filesInFolder as $fileInFolder) {
+                $totalSizeFilesInFolder += $fileInFolder['sizeMB'];
+            }
+
+            return $this->success("Размер всех файлов в папке ({$userOwnedFolder->id}) - $totalSizeFilesInFolder MB");
+        } catch (Exception $e) {
+            return $this->error($e->getMessage());
         }
     }
 }
