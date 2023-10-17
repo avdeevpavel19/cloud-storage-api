@@ -11,7 +11,7 @@ use Illuminate\Http\UploadedFile;
 
 class FileService
 {
-    public function upload(UploadedFile $file, array $data)
+    public function upload(UploadedFile $file, array $data): File
     {
         $fileSize          = $file->getSize();
         $fileSizeInMB      = $fileSize / (1024 * 1024);
@@ -37,6 +37,7 @@ class FileService
                     'format'      => $format,
                     'path'        => $filePath,
                     'hash'        => $file->hashName(),
+                    'expires_at'  => $data['expires_at'] ?? NULL,
                     'uploaded_at' => Carbon::now(),
                 ]);
 

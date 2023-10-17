@@ -32,9 +32,6 @@ Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
     Route::put('my/folders/rename/{id}', [FolderController::class, 'rename']);
     Route::delete('my/folders/', [FolderController::class, 'deleteFolders']);
-    Route::put('update-login', [UserController::class, 'updateLogin']);
-    Route::post('update-email-notification', [UserController::class, 'sendEmailUpdate']);
-    Route::get('update-email/{hash}', [UserController::class, 'updateEmail']);
     Route::get('my/folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
     Route::get('my/disk/files-size', [FileController::class, 'getSizeFilesOnDisk']);
 });

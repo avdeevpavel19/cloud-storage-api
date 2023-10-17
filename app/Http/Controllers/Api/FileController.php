@@ -42,6 +42,7 @@ class FileController extends Controller
                 'format'    => $folder->format,
                 'path'      => $folder->path,
                 'hash'      => $folder->hash,
+                'expires_at'      => $folder->expires_at,
             ];
 
             return $this->created($downloadedFile);

@@ -19,6 +19,7 @@ class File extends Model
         'format',
         'path',
         'hash',
+        'expires_at',
         'deleted_at',
     ];
 }

@@ -26,6 +26,7 @@ class UploadFileRequest extends FormRequest
             'folder_id' => ['nullable', 'integer', 'exists:folders,id'],
             'file'      => ['required', 'file', 'max:20971520'],
             'name'      => ['required', 'string', 'max:255', Rule::unique('files', 'name')],
+            'expires_at' => ['nullable', 'date', 'after:' . now()]
         ];
     }
 
@@ -41,6 +42,9 @@ class UploadFileRequest extends FormRequest
             'name.string'       => 'Имя файла должно быть строкой.',
             'name.max'          => 'Имя файла не должно превышать 255 символов.',
             'name.unique'       => 'Файл с таким именем уже существует.',
+            'expires_at.nullable' => 'Дата истечения срока хранения должна быть пустой или датой.',
+            'expires_at.date' => 'Дата истечения срока хранения должна быть корректной датой.',
+            'expires_at.after' => 'Дата истечения срока хранения должна быть позже текущей даты и времени.',
         ];
     }
 }
