@@ -22,7 +22,6 @@ class PasswordResetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email'    => ['required', 'email', 'exists:users,email'],
             'token'    => 'required',
             'password' => ['required', 'confirmed', 'min:2', 'max:30']
         ];
@@ -31,9 +30,6 @@ class PasswordResetRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'     => 'Email обязателен для заполнения.',
-            'email.email'        => 'Email должен быть действительным email-адресом.',
-            'email.exists'       => 'Указанный адрес электронной почты не найден.',
             'token.required'     => 'Токен обязателен для заполнения.',
             'password.required'  => 'Пароль обязателен для заполнения.',
             'password.confirmed' => 'Повторный пароль не совпадает.',

@@ -40,9 +40,11 @@ class PasswordResetController extends Controller
                 ]);
             }
 
-            $resetLink = url('/password/reset/' . $token);
+            $resetLink = url('/api/password/reset/' . $token);
 
             \Mail::to($email)->send(new ResetPasswordMail($resetLink));
+
+            return response()->json(['message' => 'Вам отправлено письмо для сброса пароля']);
         } catch (Exception $e) {
             return $this->error($e->getMessage());
         }
@@ -52,7 +54,6 @@ class PasswordResetController extends Controller
     {
         try {
             $reset = DB::table('password_reset_tokens')
-                ->where('email', $request->input('email'))
                 ->where('token', $request->input('token'))
                 ->first();
 
@@ -60,10 +61,10 @@ class PasswordResetController extends Controller
                 return response()->json(['message' => 'Недействительная ссылка для сброса пароля'], 422);
             }
 
-            $user = User::where('email', $request->input('email'))->first();
+            $user = User::where('email', $reset->email)->first();
             $user->update(['password' => Hash::make($request->input('password'))]);
 
-            DB::table('password_reset_tokens')->where('email', $request->input('email'))->delete();
+            DB::table('password_reset_tokens')->where('email', $reset->email)->delete();
 
             return response()->json(['message' => 'Пароль успешно сброшен']);
         } catch (\Exception $e) {
