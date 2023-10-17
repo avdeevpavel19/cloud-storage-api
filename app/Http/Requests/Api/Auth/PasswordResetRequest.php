@@ -22,7 +22,6 @@ class PasswordResetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token'    => 'required',
             'password' => ['required', 'confirmed', 'min:2', 'max:30']
         ];
     }
@@ -30,7 +29,6 @@ class PasswordResetRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'token.required'     => 'Токен обязателен для заполнения.',
             'password.required'  => 'Пароль обязателен для заполнения.',
             'password.confirmed' => 'Повторный пароль не совпадает.',
             'password.min'       => 'Пароль должен содержать минимум 2 символа.',

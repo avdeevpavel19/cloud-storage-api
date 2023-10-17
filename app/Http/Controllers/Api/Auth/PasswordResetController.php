@@ -53,11 +53,13 @@ class PasswordResetController extends Controller
     public function reset(PasswordResetRequest $request)
     {
         try {
+            $hashFromURL = $request->segment(4);
+
             $reset = DB::table('password_reset_tokens')
-                ->where('token', $request->input('token'))
+                ->where('token', $hashFromURL)
                 ->first();
 
-            if (!$reset || now()->subHours(2) > $reset->created_at) {
+            if ($reset == NULL || now()->subHours(2) > $reset->created_at) {
                 return response()->json(['message' => 'Недействительная ссылка для сброса пароля'], 422);
             }
 
