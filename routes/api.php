@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Route;
 Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::get('user-info', [UserController::class, 'getInfo']);
     Route::put('update-login', [UserController::class, 'updateLogin']);
+    Route::post('update-email-notification', [UserController::class, 'sendEmailUpdate']);
+    Route::get('update-email/{hash}', [UserController::class, 'updateEmail']);
     Route::post('create-folder', [FolderController::class, 'store']);
     Route::post('upload-file', [FileController::class, 'store']);
     Route::get('my/files', [FileController::class, 'getFilesByUser']);

@@ -29,7 +29,7 @@ trait HttpResponse
         return response()->json(['data' => $data, 'status' => $status])->setStatusCode($code);
     }
 
-    public function message($message, $code = 204)
+    public function message($message, $code = 200)
     {
         return response()->json(['message' => $message])->setStatusCode($code);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\DTO\Api\UserDto;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\SendEmailUpdateRequest;
 use App\Http\Requests\Api\UpdateLoginUserRequest;
 use App\Mail\EmailUpdateMail;
 use App\Models\User;
@@ -57,12 +58,12 @@ class UserController extends Controller
         }
     }
 
-    public function sendEmailUpdate(Request $request)
+    public function sendEmailUpdate(SendEmailUpdateRequest $request)
     {
         try {
-            $request->validate(['new_email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')]]);
+            $validationData = $request->validated();
 
-            $email = $request->input('new_email');
+            $email = $validationData['new_email'];
             $token = \Str::random(64);
 
             $existingRecord = \DB::table('update_email_tokens')->where('email', $email)->first();
@@ -84,6 +85,8 @@ class UserController extends Controller
             $updateLink = url('/api/update-email/' . $token);
 
             \Mail::to($email)->send(new EmailUpdateMail($updateLink));
+
+            return response()->json(['message' => 'Вам отправлено письмо для изменения старой почты на новую']);
         } catch (Exception $e) {
             return $this->error('Unknown error');
         }
@@ -92,12 +95,13 @@ class UserController extends Controller
     public function updateEmail(Request $request)
     {
         try {
-            $currentUser       = Auth::user();
-            $selectUser        = User::where('email', $currentUser->email)->first();
-            $hashFromURL       = $request->segment(3);
+            $currentUser = Auth::user();
+            $selectUser  = User::where('email', $currentUser->email)->first();
+            $hashFromURL = $request->segment(3);
+
             $updatedEmailToken = \DB::table('update_email_tokens')->where('token', $hashFromURL)->first();
 
-            if (!$updatedEmailToken) {
+            if ($updatedEmailToken == NULL) {
                 return $this->message('Не валидный токен.Попробуйте еще раз');
             }
 
