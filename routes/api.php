@@ -34,7 +34,7 @@ Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::delete('my/files/', [FileController::class, 'deleteFiles']);
     Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
     Route::put('my/folders/rename/{id}', [FolderController::class, 'rename']);
-    Route::delete('my/folders/', [FolderController::class, 'deleteFolders']);
+    Route::delete('my/folders/', [FolderController::class, 'delete']);
     Route::get('my/folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
     Route::get('my/disk/files-size', [FileController::class, 'getSizeFilesOnDisk']);
 });

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\DTO\Api\FolderDTO;
+use App\Exceptions\FolderNameExistsException;
 use App\Exceptions\FolderNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
 use App\Http\Requests\Api\DeleteFolderRequest;
 use App\Http\Requests\Api\UpdateNameFolderRequest;
-use App\Models\Folder;
 use App\Services\Api\FolderService;
 use App\Traits\HttpResponse;
 use Exception;
@@ -20,34 +19,23 @@ class FolderController extends Controller
 
     private FolderService $service;
 
-    public function __construct()
+    public function __construct(FolderService $service)
     {
-        $this->service = new FolderService;
+        $this->service = $service;
     }
 
-    /**
-     * @param CreateFolderRequest $request содержащит валидированные данные для создания папки.
-     * @param FolderService       $service Сервис для работы с папками.
-     *
-     * @return JsonResponse Возвращает JSON-ответ с информацией о созданной папке или ошибкой.
-     */
     public function store(CreateFolderRequest $request, FolderService $service): JsonResponse
     {
         try {
+            $currentUser   = \Auth::user();
             $validatedData = $request->validated();
-            $folder        = $service->createFolder($validatedData);
+            $result        = $service->store($validatedData, $currentUser);
 
-            if (isset($folder['error'])) {
-                return $this->message($folder['error']);
+            if ($result) {
+                return $this->success($result);
             }
-
-            $folderDTO = new FolderDTO(
-                $folder->id,
-                $folder->user_id,
-                $folder->name,
-            );
-
-            return $this->success($folderDTO);
+        } catch (FolderNameExistsException $folderNameExistsException) {
+            return $this->error($folderNameExistsException->getMessage());
         } catch (\Exception $e) {
             return $this->error('Unknown error');
         }
@@ -56,19 +44,12 @@ class FolderController extends Controller
     public function getFoldersByUser(): JsonResponse
     {
         try {
-            $currentUserID = \Auth::id();
-            $userFolders   = Folder::where('user_id', $currentUserID)->get();
+            $currentUser = \Auth::user();
+            $result      = $this->service->getFoldersByUser($currentUser);
 
-            $userFoldersData = [];
-
-            foreach ($userFolders as $userFolder) {
-                $userFoldersData[] = [
-                    'id'   => $userFolder->id,
-                    'name' => $userFolder->name,
-                ];
+            if ($result) {
+                return $this->success($result);
             }
-
-            return $this->success($userFoldersData);
         } catch (Exception $e) {
             return $this->error('Unknown error');
         }
@@ -78,14 +59,12 @@ class FolderController extends Controller
     {
         try {
             $validationData = $request->validated();
-            $folder         = $this->service->rename($validationData, $id);
+            $currentUser    = \Auth::user();
+            $folder         = $this->service->rename($validationData, $currentUser, $id);
 
-            $userFolderData = [
-                'id'   => $folder->id,
-                'name' => $folder->name,
-            ];
-
-            return $this->success($userFolderData);
+            if ($folder) {
+                return $this->success($folder);
+            }
         } catch (FolderNotFoundException $e) {
             return $this->error($e->getMessage());
         } catch (Exception $e) {
@@ -93,14 +72,15 @@ class FolderController extends Controller
         }
     }
 
-    public function deleteFolders(DeleteFolderRequest $request): JsonResponse
+    public function delete(DeleteFolderRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();
-            $deletedFile    = $this->service->destroy($validationData);
+            $currentUser    = \Auth::user();
+            $result         = $this->service->delete($validationData, $currentUser);
 
-            if ($deletedFile == true) {
-                return $this->delete('Папка успешно удалена');
+            if ($result) {
+                return $this->destroy($result);
             }
         } catch (FolderNotFoundException $exception) {
             return $this->error($exception->getMessage());

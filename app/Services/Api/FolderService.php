@@ -2,77 +2,99 @@
 
 namespace App\Services\Api;
 
+use App\DTO\Api\FolderDTO;
+use App\Exceptions\FolderNameExistsException;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
 use App\Models\Folder;
+use App\Models\User;
 
 class FolderService
 {
-    /**
-     * @param array $data Массив данных для создания папки.
-     *
-     * @return Folder Возвращает созданный объект папки (Folder).
-     */
-    public function createFolder(array $data)
+    public function store(array $data, User $user): FolderDTO
     {
-        $currentUserID    = \Auth::user()->id;
-        $folderNameExists = Folder::where('user_id', $currentUserID)->get();
-        $strArr           = [];
+        $existingFolders     = Folder::where('user_id', $user->id)->get();
+        $existingFolderNames = [];
 
-        foreach ($folderNameExists as $folderNameExist) {
-            $strArr[] = $folderNameExist->name;
+        foreach ($existingFolders as $existingFolder) {
+            $existingFolderNames[] = $existingFolder->name;
         }
 
-        if (in_array($data['name'], $strArr)) {
-            return ['error' => 'У вас уже есть папка с таким названием'];
+        if (in_array($data['name'], $existingFolderNames)) {
+            throw new FolderNameExistsException;
         }
 
         $folder = Folder::create([
-            'user_id' => $currentUserID,
+            'user_id' => $user->id,
             'name'    => $data["name"]
         ]);
 
-        return $folder;
+        $folderDTO = new FolderDTO(
+            $folder->id,
+            $folder->user_id,
+            $folder->name,
+        );
+
+        return $folderDTO;
     }
 
-    public function rename(array $data, int $id): Folder
+    public function getFoldersByUser(User $user): array
     {
-        $currentUserID = \Auth::id();
-        $folder        = Folder::where('user_id', $currentUserID)
-            ->where('id', $id)
+        $userFolders = Folder::where('user_id', $user->id)->get();
+
+        foreach ($userFolders as $userFolder) {
+            $folderDTO[] = new FolderDTO(
+                $userFolder->id,
+                $userFolder->user_id,
+                $userFolder->name
+            );
+        }
+
+        return $folderDTO;
+    }
+
+    public function rename(array $data, User $user, int $folderID): FolderDTO
+    {
+        $folder = Folder::where('user_id', $user->id)
+            ->where('id', $folderID)
             ->first();
 
         if (!empty($folder)) {
             $folder->name = $data['name'];
             $folder->save();
 
-            return $folder;
+            $folderDTO = new FolderDTO(
+                $folder->id,
+                $folder->user_id,
+                $folder->name,
+            );
+
+            return $folderDTO;
         } else {
-            throw new FolderNotFoundException('Папка не найдена');
+            throw new FolderNotFoundException;
         }
     }
 
-    public function destroy(array $data): bool
+    public function delete(array $data, User $user): string
     {
-        $currentUserID = \Auth::id();
 //        $absentFolderId      = NULL;
-        $foundAll = true;
+        $allFoldersFound = true;
 
         foreach ($data['ids'] as $id) {
-            $folder = Folder::where('user_id', $currentUserID)
+            $folder = Folder::where('user_id', $user->id)
                 ->where('id', $id)
                 ->first();
 
             if (empty($folder)) {
 //                $absentFolderId = $id;
-                $foundAll = false;
+                $allFoldersFound = false;
                 break;
             }
         }
 
-        if (!empty($foundAll)) {
+        if (!empty($allFoldersFound)) {
             foreach ($data['ids'] as $id) {
-                $folder = Folder::where('user_id', $currentUserID)
+                $folder = Folder::where('user_id', $user->id)
                     ->where('id', $id)
                     ->first();
 
@@ -81,9 +103,9 @@ class FolderService
                 $folder->delete();
             }
 
-            return true;
+            return 'Папка успешно удалена';
         } else {
-            throw new FolderNotFoundException("Папка не найдена");
+            throw new FolderNotFoundException;
         }
     }
 }

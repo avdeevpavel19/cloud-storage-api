@@ -14,7 +14,7 @@ trait HttpResponse
         return response()->json(['message' => $message, 'status' => $status])->setStatusCode($code);
     }
 
-    public function delete($message, $status = 'success', $code = 200)
+    public function destroy($message, $status = 'success', $code = 200)
     {
         return response()->json(['message' => $message, 'status' => $status])->setStatusCode($code);
     }

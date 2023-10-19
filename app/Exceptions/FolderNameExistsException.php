@@ -4,9 +4,9 @@ namespace App\Exceptions;
 
 use Exception;
 
-class FolderNotFoundException extends \Exception
+class FolderNameExistsException extends Exception
 {
-    public function __construct($message = 'Указанная папка не найдена', $code = 404, Exception $previous = NULL)
+    public function __construct($message = 'У вас уже есть папка с таким названием', $code = 400, Exception $previous = NULL)
     {
         parent::__construct($message, $code, $previous);
     }

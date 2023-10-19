@@ -22,7 +22,7 @@ class DeleteFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ids' => ['required', 'array', 'exists:folders,id'],
+            'ids' => ['required', 'array'],
         ];
     }
 
@@ -30,7 +30,6 @@ class DeleteFolderRequest extends FormRequest
     {
         return [
             'ids.required' => ':attribute обязателен для заполнения.',
-            'ids.exists'   => 'Указанной папки не существует.',
         ];
     }
 }
