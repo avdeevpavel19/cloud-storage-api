@@ -20,7 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'login',
         'email',
-        'disk_space',
+        'occupied_disk_space',
         'password',
     ];
 

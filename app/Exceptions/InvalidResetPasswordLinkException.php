@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-class InvalidResetLinkException extends \Exception
+class InvalidResetPasswordLinkException extends \Exception
 {
     protected $message = 'Недействительная ссылка для сброса пароля.';
 }

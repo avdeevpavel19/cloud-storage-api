@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use App\Exceptions\InvalidResetLinkException;
+use App\Exceptions\InvalidResetPasswordLinkException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\PasswordResetRequest;
 use App\Http\Requests\Api\Auth\PasswordResetSendLinkEmailRequest;
@@ -40,7 +40,7 @@ class PasswordResetController extends Controller
             $result         = $this->service->reset($validationData);
 
             return $this->message($result);
-        } catch (InvalidResetLinkException $invalidResetLinkException) {
+        } catch (InvalidResetPasswordLinkException $invalidResetLinkException) {
             return $this->error($invalidResetLinkException->getMessage());
         } catch (\Exception $e) {
             return $this->error('Unknown error');

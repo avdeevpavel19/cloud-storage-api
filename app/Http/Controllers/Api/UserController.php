@@ -2,115 +2,88 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\DTO\Api\UserDto;
+use App\Exceptions\InvalidEmailUpdateTokenException;
+use App\Exceptions\UserNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SendEmailUpdateRequest;
 use App\Http\Requests\Api\UpdateLoginUserRequest;
-use App\Mail\EmailUpdateMail;
 use App\Models\User;
+use App\Services\Api\UserService;
 use App\Traits\HttpResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Mockery\Exception;
 
 class UserController extends Controller
 {
     use HttpResponse;
 
-    /**
-     * @return array|\Illuminate\Http\JsonResponse
-     */
+    private UserService $service;
+
+    public function __construct(UserService $service)
+    {
+        $this->service = $service;
+    }
+
     public function getInfo(): JsonResponse
     {
         try {
             $currentUser = \Auth::user();
 
-            $userDTO = new UserDto(
-                $currentUser->id,
-                $currentUser->login,
-                $currentUser->email,
-                $currentUser->disk_space,
-            );
+            $result = $this->service->getInfo($currentUser);
 
-            return $this->success($userDTO);
+            return $this->success($result);
         } catch (\Exception $e) {
             return $this->error('Unknown error');
         }
     }
 
-    public function updateLogin(UpdateLoginUserRequest $request)
-    {
-        try {
-            $user = Auth::user();
-
-            if (empty($user)) {
-                return $this->notFound('Пользователь не найден');
-            }
-
-            $user->login = $request->login;
-            $user->save();
-
-            return $this->success('Логин успешно обновлен');
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
-        }
-    }
-
-    public function sendEmailUpdate(SendEmailUpdateRequest $request)
+    public function updateLogin(UpdateLoginUserRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();
+            $currentUser    = \Auth::user();
 
-            $email = $validationData['new_email'];
-            $token = \Str::random(64);
+            $result = $this->service->updateLogin($validationData, $currentUser);
 
-            $existingRecord = \DB::table('update_email_tokens')->where('email', $email)->first();
-
-            if ($existingRecord) {
-                \DB::table('update_email_tokens')->where('email', $email)->update([
-                    'email'      => $email,
-                    'token'      => $token,
-                    'created_at' => now()
-                ]);
-            } else {
-                \DB::table('update_email_tokens')->insert([
-                    'email'      => $email,
-                    'token'      => $token,
-                    'created_at' => now()
-                ]);
+            if ($result) {
+                return $this->message('Логин успешно обновлен');
             }
-
-            $updateLink = url('/api/update-email/' . $token);
-
-            \Mail::to($email)->send(new EmailUpdateMail($updateLink));
-
-            return response()->json(['message' => 'Вам отправлено письмо для изменения старой почты на новую']);
+        } catch (UserNotFoundException $userNotFoundException) {
+            return $this->error($userNotFoundException->getMessage());
         } catch (Exception $e) {
             return $this->error('Unknown error');
         }
     }
 
-    public function updateEmail(Request $request)
+    public function sendEmailUpdate(SendEmailUpdateRequest $request): JsonResponse
+    {
+        try {
+            $validationData = $request->validated();
+            $result         = $this->service->sendEmailUpdate($validationData);
+
+            if ($result) {
+                return $this->message($result);
+            }
+        } catch (Exception $e) {
+            return $this->error('Unknown error');
+        }
+    }
+
+    public function updateEmail(): JsonResponse
     {
         try {
             $currentUser = Auth::user();
             $selectUser  = User::where('email', $currentUser->email)->first();
-            $hashFromURL = $request->segment(3);
+            $hashFromURL = \Request::segment(3);
 
-            $updatedEmailToken = \DB::table('update_email_tokens')->where('token', $hashFromURL)->first();
+            $result = $this->service->updateEmail($hashFromURL, $selectUser);
 
-            if ($updatedEmailToken == NULL) {
-                return $this->message('Не валидный токен.Попробуйте еще раз');
+            if ($result) {
+                return $this->message($result);
             }
-
-            $selectUser->email = $updatedEmailToken->email;
-            $selectUser->save();
-
-            if ($selectUser) {
-                return $this->success('Почта успешно обновлена');
-            }
+        } catch (InvalidEmailUpdateTokenException $invalidEmailUpdateTokenException) {
+            return $this->error($invalidEmailUpdateTokenException->getMessage());
         } catch (\Exception $e) {
             return $this->error('Unknown error');
         }

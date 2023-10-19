@@ -2,7 +2,7 @@
 
 namespace App\Services\Api\Auth;
 
-use App\Exceptions\InvalidResetLinkException;
+use App\Exceptions\InvalidResetPasswordLinkException;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +47,7 @@ class PasswordResetService
             ->first();
 
         if ($resetTokenRecord == NULL || now()->subHours(2) > $resetTokenRecord->created_at) {
-            throw new InvalidResetLinkException;
+            throw new InvalidResetPasswordLinkException;
         }
 
         $userWithEmail = User::where('email', $resetTokenRecord->email)->first();
