@@ -5,13 +5,14 @@ namespace App\Services\Api;
 use App\Exceptions\diskSpaceExhaustedException;
 use App\Exceptions\FileNotFoundException;
 use App\Models\File;
+use App\Models\Folder;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 
 class FileService
 {
-    public function upload(UploadedFile $file, array $data): File
+    public function upload(UploadedFile $file, array $data)
     {
         $fileSize          = $file->getSize();
         $fileSizeInMB      = $fileSize / (1024 * 1024);
@@ -23,6 +24,27 @@ class FileService
 
             $user             = User::where('id', \Auth::id())->first();
             $updatedDiskSpace = (float)$user->disk_space + (float)$formattedFileSize;
+
+            $fileUserExists   = File::where('user_id', $user->id)->get();
+            $folderUserExists = Folder::where('user_id', $user->id)->get();
+            $strArrFileName   = [];
+            $strArrFolderID   = [];
+
+            foreach ($fileUserExists as $fileUserExist) {
+                $strArrFileName[] = $fileUserExist['name'];
+            }
+
+            foreach ($folderUserExists as $folderUserExist) {
+                $strArrFolderID[] = $folderUserExist['id'];
+            }
+
+            if (in_array($data['name'], $strArrFileName)) {
+                return ['error' => 'У вас уже есть файл с таким названием'];
+            }
+
+            if (!in_array($data['folder_id'], $strArrFolderID)) {
+                return ['error' => 'У вас нет указанной папки'];
+            }
 
             if ($updatedDiskSpace <= 100) {
                 $user->disk_space = $updatedDiskSpace;

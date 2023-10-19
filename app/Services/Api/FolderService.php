@@ -13,10 +13,21 @@ class FolderService
      *
      * @return Folder Возвращает созданный объект папки (Folder).
      */
-    public function createFolder(array $data): Folder
+    public function createFolder(array $data)
     {
-        $currentUserID = \Auth::user()->id;
-        $folder        = Folder::create([
+        $currentUserID    = \Auth::user()->id;
+        $folderNameExists = Folder::where('user_id', $currentUserID)->get();
+        $strArr           = [];
+
+        foreach ($folderNameExists as $folderNameExist) {
+            $strArr[] = $folderNameExist->name;
+        }
+
+        if (in_array($data['name'], $strArr)) {
+            return ['error' => 'У вас уже есть папка с таким названием'];
+        }
+
+        $folder = Folder::create([
             'user_id' => $currentUserID,
             'name'    => $data["name"]
         ]);
@@ -37,7 +48,7 @@ class FolderService
 
             return $folder;
         } else {
-            throw new FolderNotFoundException('Файл не найден');
+            throw new FolderNotFoundException('Папка не найдена');
         }
     }
 

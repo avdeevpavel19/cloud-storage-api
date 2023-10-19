@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\diskSpaceExhaustedException;
 use App\Exceptions\FileNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\DeleteFileRequest;
@@ -32,20 +33,28 @@ class FileController extends Controller
             $validatedData = $request->validated();
             $folder        = $this->service->upload($validatedData['file'], $validatedData);
 
+            if (isset($folder['error'])) {
+                return $this->message($folder['error']);
+            }
+
             $downloadedFile = [
-                'id'        => $folder->id,
-                'user_id'   => $folder->user_id,
-                'folder_id' => $folder->folder_id,
-                'file'      => $folder->file,
-                'name'      => $folder->name,
-                'sizeMB'    => $folder->sizeMB,
-                'format'    => $folder->format,
-                'path'      => $folder->path,
-                'hash'      => $folder->hash,
-                'expires_at'      => $folder->expires_at,
+                'id'         => $folder->id,
+                'user_id'    => $folder->user_id,
+                'folder_id'  => $folder->folder_id,
+                'file'       => $folder->file,
+                'name'       => $folder->name,
+                'sizeMB'     => $folder->sizeMB,
+                'format'     => $folder->format,
+                'path'       => $folder->path,
+                'hash'       => $folder->hash,
+                'expires_at' => $folder->expires_at,
             ];
 
             return $this->created($downloadedFile);
+        } catch (diskSpaceExhaustedException $diskSpaceExhaustedException) {
+            return $this->error($diskSpaceExhaustedException->getMessage());
+        } catch (FileNotFoundException $foundException) {
+            return $this->error($foundException->getMessage());
         } catch (\Exception $e) {
             return $this->error('Unknown error');
         }
@@ -61,15 +70,16 @@ class FileController extends Controller
 
             foreach ($userFiles as $userFile) {
                 $userFilesData[] = [
-                    'id'        => $userFile->id,
-                    'user_id'   => $userFile->user_id,
-                    'folder_id' => $userFile->folder_id,
-                    'file'      => $userFile->file,
-                    'name'      => $userFile->name,
-                    'sizeMB'    => $userFile->sizeMB,
-                    'format'    => $userFile->format,
-                    'path'      => $userFile->path,
-                    'hash'      => $userFile->hash,
+                    'id'         => $userFile->id,
+                    'user_id'    => $userFile->user_id,
+                    'folder_id'  => $userFile->folder_id,
+                    'file'       => $userFile->file,
+                    'name'       => $userFile->name,
+                    'sizeMB'     => $userFile->sizeMB,
+                    'format'     => $userFile->format,
+                    'path'       => $userFile->path,
+                    'hash'       => $userFile->hash,
+                    'expires_at' => $userFile->expires_at,
                 ];
             }
 
@@ -93,15 +103,16 @@ class FileController extends Controller
             }
 
             $userFileData = [
-                'id'        => $userFile->id,
-                'user_id'   => $userFile->user_id,
-                'folder_id' => $userFile->folder_id,
-                'file'      => $userFile->file,
-                'name'      => $userFile->name,
-                'sizeMB'    => $userFile->sizeMB,
-                'format'    => $userFile->format,
-                'path'      => $userFile->path,
-                'hash'      => $userFile->hash,
+                'id'         => $userFile->id,
+                'user_id'    => $userFile->user_id,
+                'folder_id'  => $userFile->folder_id,
+                'file'       => $userFile->file,
+                'name'       => $userFile->name,
+                'sizeMB'     => $userFile->sizeMB,
+                'format'     => $userFile->format,
+                'path'       => $userFile->path,
+                'hash'       => $userFile->hash,
+                'expires_at' => $userFile->expires_at,
             ];
 
             return $this->success($userFileData);

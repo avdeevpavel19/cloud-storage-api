@@ -37,6 +37,10 @@ class FolderController extends Controller
             $validatedData = $request->validated();
             $folder        = $service->createFolder($validatedData);
 
+            if (isset($folder['error'])) {
+                return $this->message($folder['error']);
+            }
+
             $folderDTO = new FolderDTO(
                 $folder->id,
                 $folder->user_id,

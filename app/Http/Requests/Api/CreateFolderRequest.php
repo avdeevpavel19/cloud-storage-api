@@ -23,7 +23,7 @@ class CreateFolderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('folders', 'name')],
+            'name' => ['required', 'string', 'max:255'],
         ];
     }
 
@@ -33,7 +33,6 @@ class CreateFolderRequest extends FormRequest
             'name.required' => 'Имя обязательно для заполнения.',
             'name.string'   => 'Имя должно быть строкой.',
             'name.max'      => 'Имя не должно превышать 255 символов.',
-            'name.unique'   => 'Папка с таким именем уже существует.',
         ];
     }
 }
