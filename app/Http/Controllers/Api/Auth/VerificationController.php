@@ -4,23 +4,25 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Auth\Events\Verified;
+use App\Services\Api\Auth\VerificationService;
 use Mockery\Exception;
 
 class VerificationController extends Controller
 {
+    private VerificationService $service;
+
+    public function __construct(VerificationService $service)
+    {
+        $this->service = $service;
+    }
+
     public function sendVerificationNotification()
     {
         try {
-            $user = \Auth::user();
+            $user   = \Auth::user();
+            $result = $this->service->sendVerificationNotification($user);
 
-            if ($user->hasVerifiedEmail()) {
-                return response()->json(['message' => 'Ваша почта уже подтверждена']);
-            }
-
-            $user->sendEmailVerificationNotification();
-
-            return response()->json(['message' => 'Вам отправлено письмо для подтверждения']);
+            return response()->json($result);
         } catch (Exception $e) {
             return response()->json('Unknown error');
         }
@@ -29,17 +31,10 @@ class VerificationController extends Controller
     public function verify()
     {
         try {
-            $user = User::find(\Auth::id());
+            $user   = User::find(\Auth::id());
+            $result = $this->service->verify($user);
 
-            if ($user->hasVerifiedEmail()) {
-                return response()->json(['message' => 'Пользователь уже прошел верификацию']);
-            }
-
-            if ($user->markEmailAsVerified()) {
-                event(new Verified($user));
-            }
-
-            return response()->json(['message' => 'Верификация успешно пройдена']);
+            return response()->json($result);
         } catch (Exception $e) {
             return response()->json('Unknown error');
         }

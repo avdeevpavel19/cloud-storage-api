@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\CreateUserRequest;
 use App\Services\Api\Auth\RegisterService;
 use App\Traits\HttpResponse;
+use Illuminate\Http\JsonResponse;
 
 class RegisterController extends Controller
 {
     use HttpResponse;
 
-    public function store(CreateUserRequest $request, RegisterService $service)
+    public function store(CreateUserRequest $request, RegisterService $service): JsonResponse
     {
         try {
             $validatedData = $request->validated();
