@@ -3,127 +3,122 @@
 namespace App\Services\Api;
 
 use App\Exceptions\diskSpaceExhaustedException;
+use App\Exceptions\FileNameExistsException;
 use App\Exceptions\FileNotFoundException;
+use App\Exceptions\FilesNotFoundException;
+use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
-use App\Models\Folder;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 
 class FileService
 {
-    public function upload(UploadedFile $file, array $data)
+    /**
+     * @param UploadedFile                  $file
+     * @param array                         $data
+     * @param User                          $user
+     * @param FileAndFolderValidatorService $validator
+     *
+     * @return File
+     * @throws FileNameExistsException
+     * @throws FolderNotFoundException
+     * @throws diskSpaceExhaustedException
+     */
+    public function upload(UploadedFile $file, array $data, User $user, FileAndFolderValidatorService $validator): File
     {
         $fileSize          = $file->getSize();
         $fileSizeInMB      = $fileSize / (1024 * 1024);
         $formattedFileSize = number_format($fileSizeInMB, 2);
 
-        if (!empty($file)) {
-            $filePath = $file->store('files', 'public');
-            $format   = pathinfo($file->getClientOriginalName())['extension'];
+//        if (empty($file)) {
+//            throw new FileNotFoundException;
+//        }
 
-            $user             = User::where('id', \Auth::id())->first();
-            $updatedDiskSpace = (float)$user->disk_space + (float)$formattedFileSize;
+        $format   = pathinfo($file->getClientOriginalName())['extension'];
 
-            $fileUserExists   = File::where('user_id', $user->id)->get();
-            $folderUserExists = Folder::where('user_id', $user->id)->get();
-            $strArrFileName   = [];
-            $strArrFolderID   = [];
+        $uid = \Str::uuid();
 
-            foreach ($fileUserExists as $fileUserExist) {
-                $strArrFileName[] = $fileUserExist['name'];
-            }
+        $filePath = $file->storeAs("files/$uid", "{$data['name']}.$format", 'public');
 
-            foreach ($folderUserExists as $folderUserExist) {
-                $strArrFolderID[] = $folderUserExist['id'];
-            }
+        $updatedDiskSpace = (float)$user->occupied_disk_space + (float)$formattedFileSize;
 
-            if (in_array($data['name'], $strArrFileName)) {
-                return ['error' => 'У вас уже есть файл с таким названием'];
-            }
+        $validator->checkFolderIdExists($user, $data['folder_id']);
+        $validator->checkFileNameExists($user, $data['name']);
 
-            if (!in_array($data['folder_id'], $strArrFolderID)) {
-                return ['error' => 'У вас нет указанной папки'];
-            }
-
-            if ($updatedDiskSpace <= 100) {
-                $user->disk_space = $updatedDiskSpace;
-                $user->save();
-
-                $downloadFile = File::create([
-                    'user_id'     => \Auth::id(),
-                    'folder_id'   => (int)$data['folder_id'],
-                    'file'        => $file->getClientOriginalName(),
-                    'name'        => $data['name'],
-                    'sizeMB'      => $formattedFileSize,
-                    'format'      => $format,
-                    'path'        => $filePath,
-                    'hash'        => $file->hashName(),
-                    'expires_at'  => $data['expires_at'] ?? NULL,
-                    'uploaded_at' => Carbon::now(),
-                ]);
-
-                return $downloadFile;
-            } else {
-                throw new diskSpaceExhaustedException('Превышено допустимое дисковое пространство');
-            }
+        if ($updatedDiskSpace >= 100) {
+            throw new diskSpaceExhaustedException;
         }
 
-        throw new FileNotFoundException('Файл не найден');
+        $user->occupied_disk_space = $updatedDiskSpace;
+        $user->saveOrFail();
+
+        return File::create([
+            'user_id'     => \Auth::id(),
+            'folder_id'   => (int)$data['folder_id'],
+            'file'        => $file->getClientOriginalName(),
+            'name'        => $data['name'],
+            'sizeMB'      => $formattedFileSize,
+            'format'      => $format,
+            'path'        => $filePath,
+            'hash'        => $file->hashName(),
+            'expires_at'  => $data['expires_at'] ?? NULL,
+            'uploaded_at' => Carbon::now(),
+        ]);
     }
 
-    public function rename(array $data, int $id): File
+    /**
+     * @param string                        $fileName
+     * @param int                           $fileID
+     * @param User                          $user
+     * @param FileAndFolderValidatorService $validator
+     *
+     * @return File
+     * @throws FileNameExistsException
+     * @throws FileNotFoundException
+     */
+    public function rename(string $fileName, int $fileID, User $user, FileAndFolderValidatorService $validator): File
     {
-        $currentUserID = \Auth::id();
-        $file          = File::where('user_id', $currentUserID)
-            ->where('id', $id)
+        $file = File::where('user_id', $user->id)
+            ->where('id', $fileID)
             ->first();
 
-        if (!empty($file)) {
-            $file->name = $data['name'];
-            $file->save();
+        $validator->checkFileNameExists($user, $fileName);
 
-            return $file;
+        if ($file === NULL) {
+            throw new FileNotFoundException;
         }
 
-        throw new FileNotFoundException('Файл не найден');
+        $file->name = $fileName;
+        $file->save();
+
+        return $file;
     }
 
-    public function destroy(array $data): bool
+    /**
+     * @param array $fileIds
+     * @param User  $user
+     *
+     * @return void
+     * @throws FilesNotFoundException
+     */
+    public function destroy(array $fileIds, User $user): void
     {
-        $currentUserID  = \Auth::id();
-        $foundAll       = true;
-        $totalSizeFiles = 0;
-        $user           = User::where('id', \Auth::id())->first();
+        $filesToDelete = File::where('user_id', $user->id)
+            ->whereIn('id', $fileIds)
+            ->get();
 
-        foreach ($data['ids'] as $id) {
-            $file = File::where('user_id', $currentUserID)
-                ->where('id', $id)
-                ->first();
-
-            if (empty($file)) {
-                $foundAll = false;
-                break;
-            }
+        if ($filesToDelete->isEmpty() || $filesToDelete->count() !== count($fileIds)) {
+            throw new FilesNotFoundException;
         }
 
-        if ($foundAll) {
-            foreach ($data['ids'] as $id) {
-                $file = File::where('user_id', $currentUserID)
-                    ->where('id', $id)
-                    ->first();
+        $totalSizeDeletedFiles = $filesToDelete->sum('sizeMB');
 
-                $totalSizeFiles += $file->sizeMB;
+        $user->occupied_disk_space -= (float)$totalSizeDeletedFiles;
+        $user->save();
 
-                $file->delete();
-            }
-            $updatedDiskSpace = (float)$user->disk_space - (float)$totalSizeFiles;
-            $user->disk_space = $updatedDiskSpace;
-            $user->save();
-
-            return true;
-        } else {
-            throw new FileNotFoundException('Один или несколько файлов не найдены');
-        }
+        $filesToDelete->each(function ($file) {
+            $file->delete();
+        });
     }
 }

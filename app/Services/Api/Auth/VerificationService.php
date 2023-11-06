@@ -2,32 +2,32 @@
 
 namespace App\Services\Api\Auth;
 
+use App\Exceptions\EmailAlreadyVerifiedException;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 
 class VerificationService
 {
-    public function sendVerificationNotification(User $user)
+    /**
+     * @throws EmailAlreadyVerifiedException
+     */
+    public function sendVerificationNotification(User $user): void
     {
         if ($user->hasVerifiedEmail()) {
-            return ['message' => 'Ваша почта уже подтверждена'];
+            throw new EmailAlreadyVerifiedException();
         }
 
         $user->sendEmailVerificationNotification();
-
-        return ['message' => 'Вам отправлено письмо для подтверждения'];
     }
 
-    public function verify(User $user)
+    public function verify(User $user): void
     {
         if ($user->hasVerifiedEmail()) {
-            return ['message' => 'Пользователь уже прошел верификацию'];
+            return;
         }
 
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
         }
-
-        return ['message' => 'Верификация успешно пройдена'];
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Exceptions;
 
-class diskSpaceExhaustedException extends \Exception
+class diskSpaceExhaustedException extends BaseException
 {
-
 }

@@ -22,7 +22,7 @@ class DeleteFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ids' => ['required', 'array', 'exists:files,id'],
+            'ids' => ['required', 'array'],
         ];
     }
 
@@ -30,7 +30,6 @@ class DeleteFileRequest extends FormRequest
     {
         return [
             'ids.required' => ':attribute обязателен для заполнения.',
-            'ids.exists'   => 'Указанного файла не существует.',
         ];
     }
 }

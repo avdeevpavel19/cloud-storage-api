@@ -2,79 +2,77 @@
 
 namespace App\Services\Api;
 
-use App\DTO\Api\UserDto;
+use App\Exceptions\BaseException;
 use App\Exceptions\InvalidEmailUpdateTokenException;
-use App\Exceptions\UserNotFoundException;
 use App\Mail\EmailUpdateMail;
 use App\Models\User;
 
 class UserService
 {
-    public function getInfo(User $user): UserDto
+    public function updateLogin(string $login, User $user): User
     {
-        $userDTO = new UserDto(
-            $user->id,
-            $user->login,
-            $user->email,
-            $user->occupied_disk_space,
-        );
-
-        return $userDTO;
-    }
-
-    public function updateLogin(array $data, User $user): User
-    {
-        if (empty($user)) {
-            throw new UserNotFoundException;
-        }
-
-        $user->login = $data['login'];
-        $user->save();
+        $user->login = $login;
+        $user->saveOrFail();
 
         return $user;
     }
 
-    public function sendEmailUpdate(array $data): string
+    /**
+     * @param string $email
+     *
+     * @return void
+     * @throws BaseException
+     */
+    public function sendEmailUpdate(string $email): void
     {
-        $email = $data['new_email'];
-        $token = \Str::random(64);
+        $token         = \Str::random(64);
+        $currentUserID = \Auth::id();
 
         $existingEmailToken = \DB::table('update_email_tokens')->where('email', $email)->first();
 
         if ($existingEmailToken) {
             \DB::table('update_email_tokens')->where('email', $email)->update([
                 'email'      => $email,
+                'user_id'    => $currentUserID,
                 'token'      => $token,
                 'created_at' => now()
             ]);
         } else {
             \DB::table('update_email_tokens')->insert([
                 'email'      => $email,
+                'user_id'    => $currentUserID,
                 'token'      => $token,
                 'created_at' => now()
             ]);
         }
 
-        $updateLink = url('/api/update-email/' . $token);
+        if ($existingEmailToken) {
+            $updateLink = url('/api/user/email/' . $token);
+            \Mail::to($email)->send(new EmailUpdateMail($updateLink));
 
-        \Mail::to($email)->send(new EmailUpdateMail($updateLink));
+            return;
+        }
 
-        return 'Вам отправлено письмо для изменения старой почты на новую';
+        throw new BaseException('Невозможно обновить электронную почту пользователя');
     }
 
-    public function updateEmail(string $emailUpdateToken, User $user): string
+    /**
+     * @param string $emailUpdateToken
+     *
+     * @return void
+     * @throws InvalidEmailUpdateTokenException
+     */
+    public function confirmNewEmailByToken(string $emailUpdateToken): void
     {
         $updatedEmailTokenRecord = \DB::table('update_email_tokens')->where('token', $emailUpdateToken)->first();
 
-        if ($updatedEmailTokenRecord == NULL) {
-            throw new InvalidEmailUpdateTokenException;
+        $user = User::find($updatedEmailTokenRecord->user_id);
+
+        if ($updatedEmailTokenRecord === NULL) {
+            throw new InvalidEmailUpdateTokenException('Не валидный токен для обновления почты');
         }
 
         $user->email = $updatedEmailTokenRecord->email;
-        $user->save();
-
-        if ($user) {
-            return 'Почта успешно обновлена';
-        }
+        $user->saveOrFail();
     }
 }

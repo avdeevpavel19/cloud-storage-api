@@ -8,84 +8,82 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
 use App\Http\Requests\Api\DeleteFolderRequest;
 use App\Http\Requests\Api\UpdateNameFolderRequest;
+use App\Services\Api\FileAndFolderValidatorService;
 use App\Services\Api\FolderService;
 use App\Traits\HttpResponse;
 use Exception;
-use Illuminate\Http\JsonResponse;
 
 class FolderController extends Controller
 {
     use HttpResponse;
 
-    private FolderService $service;
+    private FolderService                 $service;
+    private FileAndFolderValidatorService $validatorService;
 
-    public function __construct(FolderService $service)
+    public function __construct(FolderService $service, FileAndFolderValidatorService $validatorService)
     {
-        $this->service = $service;
+        $this->service          = $service;
+        $this->validatorService = $validatorService;
     }
 
-    public function store(CreateFolderRequest $request, FolderService $service): JsonResponse
+    public function store(CreateFolderRequest $request, FolderService $service)
     {
         try {
             $currentUser   = \Auth::user();
             $validatedData = $request->validated();
-            $result        = $service->store($validatedData, $currentUser);
+            $createdFolder = $service->store($validatedData['name'], $currentUser, $this->validatorService);
 
-            if ($result) {
-                return $this->success($result);
+            if ($createdFolder) {
+                return $createdFolder;
             }
-        } catch (FolderNameExistsException $folderNameExistsException) {
-            return $this->error($folderNameExistsException->getMessage());
-        } catch (\Exception $e) {
+        } catch (FolderNameExistsException) {
+            throw new FolderNameExistsException('У вас уже есть папка с таким названием');
+        } catch (\Exception) {
             return $this->error('Unknown error');
         }
     }
 
-    public function getFoldersByUser(): JsonResponse
+    public function getFoldersByUser()
     {
         try {
             $currentUser = \Auth::user();
             $result      = $this->service->getFoldersByUser($currentUser);
 
-            if ($result) {
-                return $this->success($result);
-            }
-        } catch (Exception $e) {
+            return $this->displayList($result);
+        } catch (Exception) {
             return $this->error('Unknown error');
         }
     }
 
-    public function rename(UpdateNameFolderRequest $request, int $id): JsonResponse
+    public function rename(UpdateNameFolderRequest $request, int $id)
     {
         try {
             $validationData = $request->validated();
             $currentUser    = \Auth::user();
-            $folder         = $this->service->rename($validationData, $currentUser, $id);
+            $folder         = $this->service->rename($validationData['name'], $currentUser, $id, $this->validatorService);
 
             if ($folder) {
-                return $this->success($folder);
+                return $folder;
             }
-        } catch (FolderNotFoundException $e) {
-            return $this->error($e->getMessage());
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+        } catch (FolderNotFoundException) {
+            throw new FolderNotFoundException('Указанная папка не найдена');
+        } catch (FolderNameExistsException) {
+            throw new FolderNameExistsException('У вас уже есть папка с таким названием');
+        } catch (Exception) {
+            return 'Unknown error';
         }
     }
 
-    public function delete(DeleteFolderRequest $request): JsonResponse
+    public function delete(DeleteFolderRequest $request)
     {
         try {
             $validationData = $request->validated();
             $currentUser    = \Auth::user();
-            $result         = $this->service->delete($validationData, $currentUser);
-
-            if ($result) {
-                return $this->destroy($result);
-            }
-        } catch (FolderNotFoundException $exception) {
-            return $this->error($exception->getMessage());
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            $this->service->delete($validationData['ids'], $currentUser);
+        } catch (FolderNotFoundException) {
+            throw new FolderNotFoundException('Указанная папка не найдена');
+        } catch (Exception) {
+            return 'Unknown error';
         }
     }
 }

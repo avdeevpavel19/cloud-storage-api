@@ -20,21 +20,21 @@ use Illuminate\Support\Facades\Route;
 //    return $request->user();
 //});
 
-Route::group(['middleware' => ['auth:api', 'verified']], function () {
-    Route::get('user-info', [UserController::class, 'getInfo']);
-    Route::put('update-login', [UserController::class, 'updateLogin']);
-    Route::post('update-email-notification', [UserController::class, 'sendEmailUpdate']);
-    Route::get('update-email/{hash}', [UserController::class, 'updateEmail']);
-    Route::post('create-folder', [FolderController::class, 'store']);
+//Route::group(['middleware' => ['auth:api', 'verified']], function () {
+    Route::get('user', [UserController::class, 'getInfo']);
+    Route::put('user/login', [UserController::class, 'updateLogin']);
+    Route::put('user/email', [UserController::class, 'sendEmailUpdate']);
+    Route::get('user/email/{hash}', [UserController::class, 'updateEmail']);
+    Route::post('folder', [FolderController::class, 'store']);
     Route::post('upload-file', [FileController::class, 'store']);
-    Route::get('my/files', [FileController::class, 'getFilesByUser']);
-    Route::get('my/files/{id}', [FileController::class, 'getFileByUser']);
-    Route::get('download-file/{id}', [FileController::class, 'download']);
-    Route::put('my/files/rename/{id}', [FileController::class, 'rename']);
-    Route::delete('my/files/', [FileController::class, 'deleteFiles']);
-    Route::get('my/folders', [FolderController::class, 'getFoldersByUser']);
-    Route::put('my/folders/rename/{id}', [FolderController::class, 'rename']);
-    Route::delete('my/folders/', [FolderController::class, 'delete']);
-    Route::get('my/folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
-    Route::get('my/disk/files-size', [FileController::class, 'getSizeFilesOnDisk']);
-});
+    Route::get('files', [FileController::class, 'getFilesByUser']);
+    Route::get('files/info/{id}', [FileController::class, 'getFileByUser']);
+    Route::get('download-files/{id}', [FileController::class, 'download']);
+    Route::put('files/{id}', [FileController::class, 'rename']);
+    Route::get('folders', [FolderController::class, 'getFoldersByUser']);
+    Route::put('folders/{id}', [FolderController::class, 'rename']);
+    Route::delete('folders/', [FolderController::class, 'delete']);
+    Route::delete('files/', [FileController::class, 'deleteFiles']);
+    Route::get('folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
+    Route::get('files-size', [FileController::class, 'getSizeFilesOnDisk']);
+//});

@@ -23,7 +23,7 @@ class UpdateNameFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('files', 'name')],
+            'name' => ['required', 'string', 'max:255'],
         ];
     }
 
@@ -33,7 +33,6 @@ class UpdateNameFileRequest extends FormRequest
             'name.required' => 'Имя файла обязательно для заполнения.',
             'name.string'   => 'Имя файла должно быть строкой.',
             'name.max'      => 'Имя файла не должно превышать 255 символов.',
-            'name.unique'   => 'Файл с таким именем уже существует.',
         ];
     }
 }

@@ -2,25 +2,25 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Exceptions\BaseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\CreateUserRequest;
 use App\Services\Api\Auth\RegisterService;
 use App\Traits\HttpResponse;
-use Illuminate\Http\JsonResponse;
 
 class RegisterController extends Controller
 {
     use HttpResponse;
 
-    public function store(CreateUserRequest $request, RegisterService $service): JsonResponse
+    public function store(CreateUserRequest $request, RegisterService $service): array
     {
         try {
             $validatedData = $request->validated();
-            $user          = $service->createUser($validatedData);
+            $createdUser   = $service->createUser($validatedData);
 
-            return $this->success($user);
-        } catch (\Exception $e) {
-            return $this->error('Unknown error');
+            return $createdUser;
+        } catch (\Exception) {
+            throw new BaseException('Unknown error');
         }
     }
 }

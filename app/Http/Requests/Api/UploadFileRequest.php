@@ -23,7 +23,7 @@ class UploadFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'folder_id' => ['nullable', 'integer', 'exists:folders,id'],
+            'folder_id' => ['required', 'integer'],
             'file'      => ['required', 'file', 'max:20971520'],
             'name'      => ['required', 'string', 'max:255'],
             'expires_at' => ['nullable', 'date', 'after:' . now()]
@@ -34,7 +34,6 @@ class UploadFileRequest extends FormRequest
     {
         return [
             'folder_id.integer' => 'Идентификатор папки должен быть целым числом.',
-            'folder_id.exists'  => 'Указанной папки не существует.',
             'file.required'     => 'Файл обязателен для загрузки.',
             'file.file'         => 'Загруженный объект должен быть файлом.',
             'file.max'          => 'Размер файла не должен превышать 20 МБ.',

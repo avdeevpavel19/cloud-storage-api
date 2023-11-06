@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\diskSpaceExhaustedException;
+use App\Exceptions\FileNameExistsException;
 use App\Exceptions\FileNotFoundException;
+use App\Exceptions\FilesNotFoundException;
+use App\Exceptions\FolderNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\DeleteFileRequest;
 use App\Http\Requests\Api\UpdateNameFileRequest;
 use App\Http\Requests\Api\UploadFileRequest;
 use App\Models\File;
 use App\Models\Folder;
+use App\Services\Api\FileAndFolderValidatorService;
 use App\Services\Api\FileService;
 use App\Traits\HttpResponse;
 use Illuminate\Http\JsonResponse;
@@ -20,43 +24,49 @@ class FileController extends Controller
 {
     use HttpResponse;
 
-    private FileService $service;
+    private FileService                   $service;
+    private FileAndFolderValidatorService $validatorService;
 
-    public function __construct()
+    public function __construct(FileService $service, FileAndFolderValidatorService $validatorService)
     {
-        $this->service = new FileService;
+        $this->service          = $service;
+        $this->validatorService = $validatorService;
     }
 
-    public function store(UploadFileRequest $request): JsonResponse
+    public function store(UploadFileRequest $request): array
     {
         try {
             $validatedData = $request->validated();
-            $folder        = $this->service->upload($validatedData['file'], $validatedData);
+            $currentUser   = \Auth::user();
 
-            if (isset($folder['error'])) {
-                return $this->message($folder['error']);
+            $result = $this->service->upload($validatedData['file'], $validatedData, $currentUser, $this->validatorService);
+
+            if ($result) {
+                $uploadedFile = [
+                    'id'         => $result->id,
+//                    'user_id'    => $result->user_id,
+                    'folder_id'  => $result->folder_id,
+                    'file'       => $result->file,
+                    'name'       => $result->name,
+                    'sizeMB'     => $result->sizeMB,
+                    'format'     => $result->format,
+                    'path'       => $result->path,
+                    'hash'       => $result->hash,
+                    'expires_at' => $result->expires_at,
+                ];
             }
 
-            $downloadedFile = [
-                'id'         => $folder->id,
-                'user_id'    => $folder->user_id,
-                'folder_id'  => $folder->folder_id,
-                'file'       => $folder->file,
-                'name'       => $folder->name,
-                'sizeMB'     => $folder->sizeMB,
-                'format'     => $folder->format,
-                'path'       => $folder->path,
-                'hash'       => $folder->hash,
-                'expires_at' => $folder->expires_at,
-            ];
-
-            return $this->created($downloadedFile);
-        } catch (diskSpaceExhaustedException $diskSpaceExhaustedException) {
-            return $this->error($diskSpaceExhaustedException->getMessage());
-        } catch (FileNotFoundException $foundException) {
-            return $this->error($foundException->getMessage());
+            return $uploadedFile;
+//        } catch (FileNotFoundException) {
+//            throw new FileNotFoundException('Файл не найден');
+        } catch (diskSpaceExhaustedException) {
+            throw new diskSpaceExhaustedException('Превышено допустимое дисковое пространство');
+        } catch (FolderNotFoundException) {
+            throw new FolderNotFoundException('Указанная папка не найдена');
+        } catch (FileNameExistsException) {
+            throw new FileNameExistsException('У вас уже есть файл с таким названием');
         } catch (\Exception $e) {
-            return $this->error('Unknown error');
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -64,14 +74,13 @@ class FileController extends Controller
     {
         try {
             $currentUserID = \Auth::id();
-            $userFiles     = File::where('user_id', $currentUserID)->get();
+            $userFiles     = File::where('user_id', $currentUserID)->paginate(8);
 
             $userFilesData = [];
 
             foreach ($userFiles as $userFile) {
                 $userFilesData[] = [
                     'id'         => $userFile->id,
-                    'user_id'    => $userFile->user_id,
                     'folder_id'  => $userFile->folder_id,
                     'file'       => $userFile->file,
                     'name'       => $userFile->name,
@@ -83,13 +92,13 @@ class FileController extends Controller
                 ];
             }
 
-            return $this->success($userFilesData);
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            return $this->displayList($userFilesData);
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 
-    public function getFileByUser(int $id): JsonResponse
+    public function getFileByUser(int $id): array
     {
         try {
             $currentUserID = \Auth::id();
@@ -104,7 +113,7 @@ class FileController extends Controller
 
             $userFileData = [
                 'id'         => $userFile->id,
-                'user_id'    => $userFile->user_id,
+//                'user_id'    => $userFile->user_id,
                 'folder_id'  => $userFile->folder_id,
                 'file'       => $userFile->file,
                 'name'       => $userFile->name,
@@ -115,9 +124,9 @@ class FileController extends Controller
                 'expires_at' => $userFile->expires_at,
             ];
 
-            return $this->success($userFileData);
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            return $userFileData;
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 
@@ -125,7 +134,7 @@ class FileController extends Controller
     {
         try {
             $currentUserID = \Auth::id();
-            $file          = File::where('user_id', $currentUserID)
+            $file          = File::where('user_id', 1)
                 ->where('id', $id)
                 ->first();
 
@@ -136,20 +145,21 @@ class FileController extends Controller
             $filePath = storage_path('app/public/' . $file->path);
 
             return response()->download($filePath);
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 
-    public function rename(UpdateNameFileRequest $request, int $id): JsonResponse
+    public function rename(UpdateNameFileRequest $request, int $fileID): array
     {
         try {
             $validationData = $request->validated();
-            $file           = $this->service->rename($validationData, $id);
+            $currentUser    = \Auth::user();
+            $file           = $this->service->rename($validationData['name'], $fileID, $currentUser, $this->validatorService);
 
             $fileData = [
                 'id'        => $file->id,
-                'user_id'   => $file->user_id,
+//                'user_id'   => $file->user_id,
                 'folder_id' => $file->folder_id,
                 'file'      => $file->file,
                 'name'      => $file->name,
@@ -159,29 +169,37 @@ class FileController extends Controller
                 'hash'      => $file->hash,
             ];
 
-            return $this->success($fileData);
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            return $fileData;
+        } catch (FileNameExistsException) {
+            throw new FileNameExistsException('У вас уже есть файл с таким названием');
+        } catch (FileNotFoundException) {
+            throw new FileNotFoundException('Файл не найден');
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 
-    public function deleteFiles(DeleteFileRequest $request): JsonResponse
-    {
-        $validationData = $request->validated();
-        $deletedFile    = $this->service->destroy($validationData);
-
-        if ($deletedFile == true) {
-            return $this->delete('Файлы успешно удалены');
-        }
-    }
-
-    public function getSizeFilesInFolder(Request $request): JsonResponse
+    public function deleteFiles(DeleteFileRequest $request)
     {
         try {
-            $userOwnedFolder = Folder::where('id', $request->folder_id)->where('user_id', \Auth::id())->first();
+            $validationData = $request->validated();
+            $currentUser    = \Auth::user();
+            $this->service->destroy($validationData['ids'], $currentUser);
+        } catch (FilesNotFoundException) {
+            throw new FilesNotFoundException('Один или несколько файлов не найдены');
+        } catch (\Exception) {
+            throw new \Exception('Unknown error');
+        }
+    }
+
+    public function getSizeFilesInFolder(Request $request)
+    {
+        try {
+            $currentUserID   = \Auth::id();
+            $userOwnedFolder = Folder::where('id', $request->folder_id)->where('user_id', $currentUserID)->first();
 
             if (empty($userOwnedFolder)) {
-                return $this->notFound('Папка не найдена');
+                throw new FolderNotFoundException('В указанной папке нет файлов');
             }
 
             $filesInFolder = File::where('folder_id', $userOwnedFolder->id)->whereNull('deleted_at')->get();
@@ -192,16 +210,17 @@ class FileController extends Controller
                 $totalSizeFilesInFolder += $fileInFolder['sizeMB'];
             }
 
-            return $this->success("Размер всех файлов в папке ({$userOwnedFolder->id}) - $totalSizeFilesInFolder MB");
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            return (int)$totalSizeFilesInFolder;
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 
     public function getSizeFilesOnDisk()
     {
         try {
-            $filesUser = File::where('user_id', \Auth::id())->whereNull('deleted_at')->get();
+            $currentUserID = \Auth::id();
+            $filesUser     = File::where('user_id', $currentUserID)->whereNull('deleted_at')->get();
 
             $totalSizeFiles = 0;
 
@@ -209,9 +228,9 @@ class FileController extends Controller
                 $totalSizeFiles += $fileUser->sizeMB;
             }
 
-            return $this->success("Размер всех файлов на вашем диске - $totalSizeFiles MB");
-        } catch (Exception $e) {
-            return $this->error('Unknown error');
+            return (int)$totalSizeFiles;
+        } catch (Exception) {
+            throw new \Exception('Unknown error');
         }
     }
 }

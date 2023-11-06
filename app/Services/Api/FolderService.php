@@ -2,7 +2,6 @@
 
 namespace App\Services\Api;
 
-use App\DTO\Api\FolderDTO;
 use App\Exceptions\FolderNameExistsException;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
@@ -11,78 +10,81 @@ use App\Models\User;
 
 class FolderService
 {
-    public function store(array $data, User $user): FolderDTO
+    /**
+     * @param string $name
+     * @param User   $user
+     *
+     * @return array
+     * @throws FolderNameExistsException
+     */
+    public function store(string $name, User $user, FileAndFolderValidatorService $validator): array
     {
-        $existingFolders     = Folder::where('user_id', $user->id)->get();
-        $existingFolderNames = [];
-
-        foreach ($existingFolders as $existingFolder) {
-            $existingFolderNames[] = $existingFolder->name;
-        }
-
-        if (in_array($data['name'], $existingFolderNames)) {
-            throw new FolderNameExistsException;
-        }
+        $validator->checkFolderNameExists($user, $name);
 
         $folder = Folder::create([
             'user_id' => $user->id,
-            'name'    => $data["name"]
+            'name'    => $name
         ]);
 
-        $folderDTO = new FolderDTO(
-            $folder->id,
-            $folder->user_id,
-            $folder->name,
-        );
-
-        return $folderDTO;
+        return [
+            'id'   => $folder->id,
+            'name' => $folder->name,
+        ];
     }
 
     public function getFoldersByUser(User $user): array
     {
-        $userFolders = Folder::where('user_id', $user->id)->get();
+        $userFolders = Folder::where('user_id', $user->id)->paginate(8);
+        $folderList  = [];
 
         foreach ($userFolders as $userFolder) {
-            $folderDTO[] = new FolderDTO(
-                $userFolder->id,
-                $userFolder->user_id,
-                $userFolder->name
-            );
+            $folderList[] = [
+                'id'   => $userFolder->id,
+                'name' => $userFolder->name,
+            ];
         }
 
-        return $folderDTO;
+        return $folderList;
     }
 
-    public function rename(array $data, User $user, int $folderID): FolderDTO
+    /**
+     * @return Folder
+     * @throws FolderNameExistsException
+     * @throws FolderNotFoundException
+     */
+    public function rename(string $name, User $user, int $folderID, FileAndFolderValidatorService $validator): Folder
     {
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderID)
             ->first();
 
-        if (!empty($folder)) {
-            $folder->name = $data['name'];
-            $folder->save();
+        $validator->checkFolderNameExists($user, $name);
 
-            $folderDTO = new FolderDTO(
-                $folder->id,
-                $folder->user_id,
-                $folder->name,
-            );
-
-            return $folderDTO;
-        } else {
+        if (empty($folder)) {
             throw new FolderNotFoundException;
         }
+
+        $folder->name = $name;
+        $folder->save();
+
+        return $folder;
     }
 
-    public function delete(array $data, User $user): string
+    /**
+     * @param int[] $folderIds
+     * @param User  $user
+     *
+     * @return void
+     * @throws FolderNotFoundException
+     */
+    public function delete(array $folderIds, User $user): void
     {
 //        $absentFolderId      = NULL;
         $allFoldersFound = true;
 
-        foreach ($data['ids'] as $id) {
+        foreach ($folderIds as $folderID) {
             $folder = Folder::where('user_id', $user->id)
-                ->where('id', $id)
+                ->where('id', $folderID)
                 ->first();
 
             if (empty($folder)) {
@@ -92,20 +94,18 @@ class FolderService
             }
         }
 
-        if (!empty($allFoldersFound)) {
-            foreach ($data['ids'] as $id) {
-                $folder = Folder::where('user_id', $user->id)
-                    ->where('id', $id)
-                    ->first();
-
-                File::where('folder_id', $folder->id)->update(['deleted_at' => now()]);
-
-                $folder->delete();
-            }
-
-            return 'Папка успешно удалена';
-        } else {
+        if (!$allFoldersFound) {
             throw new FolderNotFoundException;
+        }
+
+        foreach ($folderIds as $folderID) {
+            $folder = Folder::where('user_id', $user->id)
+                ->where('id', $folderID)
+                ->first();
+
+            File::where('folder_id', $folder->id)->update(['deleted_at' => now()]);
+
+            $folder->delete();
         }
     }
 }

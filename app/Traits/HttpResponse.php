@@ -33,4 +33,9 @@ trait HttpResponse
     {
         return response()->json(['message' => $message, 'status' => $status])->setStatusCode($code);
     }
+
+    public function displayList($data, $nextPage = '?page=2')
+    {
+        return response()->json(['data' => $data, 'next_page' => $nextPage])->setStatusCode(200);
+    }
 }

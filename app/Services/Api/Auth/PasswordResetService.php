@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PasswordResetService
 {
-    public function sendLinkEmail(array $data): string
+    public function sendLinkEmail(array $data): void
     {
         $email      = $data['email'];
         $resetToken = \Str::random(64);
@@ -31,30 +31,30 @@ class PasswordResetService
             ]);
         }
 
-        $resetLink = url('/api/password/reset/' . $resetToken);
+        $resetLink = url('/api/password/' . $resetToken);
 
         \Mail::to($data['email'])->send(new ResetPasswordMail($resetLink));
-
-        return 'Вам отправлено письмо для сброса пароля';
     }
 
-    public function reset(array $data): string
+    /**
+     * @return void
+     * @throws InvalidResetPasswordLinkException
+     */
+    public function reset(array $data): void
     {
-        $resetTokenFromURL = \Request::segment(4);
+        $resetTokenFromURL = \Request::segment(3);
 
         $resetTokenRecord = DB::table('password_reset_tokens')
             ->where('token', $resetTokenFromURL)
             ->first();
 
         if ($resetTokenRecord == NULL || now()->subHours(2) > $resetTokenRecord->created_at) {
-            throw new InvalidResetPasswordLinkException;
+            throw new InvalidResetPasswordLinkException('Недействительная ссылка для сброса пароля');
         }
 
         $userWithEmail = User::where('email', $resetTokenRecord->email)->first();
         $userWithEmail->update(['password' => Hash::make($data['password'])]);
 
         DB::table('password_reset_tokens')->where('email', $resetTokenRecord->email)->delete();
-
-        return 'Пароль успешно сброшен';
     }
 }

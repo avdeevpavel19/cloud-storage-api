@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Exceptions\BaseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Services\Api\Auth\LoginService;
@@ -17,13 +18,13 @@ class LoginController extends Controller
             $validatedData = $request->validated();
             $user          = $service->loginUser($validatedData);
 
-            if (!empty($user)) {
-                return $this->success($user);
+            if (empty($user)) {
+                return 'Неверный логин или пароль';
             }
 
-            return $this->notFound('Неверный логин или пароль');
-        } catch (\Exception $e) {
-            return $this->error('Unknown error');
+            return $user;
+        } catch (\Exception) {
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -32,10 +33,8 @@ class LoginController extends Controller
         try {
             $user = \Auth::user();
             $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
-
-            return response()->json(['message' => 'Вы вышли из аккаунта']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Unknown error']);
+        } catch (BaseException) {
+            throw new BaseException('Unknown error');
         }
     }
 }
