@@ -41,6 +41,16 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        'password'          => 'hashed',
     ];
+
+    public function folders()
+    {
+        return $this->hasMany(Folder::class);
+    }
+
+    public function files()
+    {
+        return $this->hasMany(File::class);
+    }
 }

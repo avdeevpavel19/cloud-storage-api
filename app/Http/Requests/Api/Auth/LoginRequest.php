@@ -23,7 +23,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'login'    => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:4'],
+            'password' => ['required', 'string'],
         ];
     }
 
@@ -36,7 +36,6 @@ class LoginRequest extends FormRequest
 
             'password.required' => 'Пароль является обязательным.',
             'password.string'   => 'Пароль должен быть строкой.',
-            'password.min'      => 'Пароль должен быть не менее :min символов.',
         ];
     }
 }

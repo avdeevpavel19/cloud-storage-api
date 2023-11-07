@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 //    return $request->user();
 //});
 
-//Route::group(['middleware' => ['auth:api', 'verified']], function () {
+Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::get('user', [UserController::class, 'getInfo']);
     Route::put('user/login', [UserController::class, 'updateLogin']);
     Route::put('user/email', [UserController::class, 'sendEmailUpdate']);
@@ -37,4 +37,4 @@ use Illuminate\Support\Facades\Route;
     Route::delete('files/', [FileController::class, 'deleteFiles']);
     Route::get('folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
     Route::get('files-size', [FileController::class, 'getSizeFilesOnDisk']);
-//});
+});

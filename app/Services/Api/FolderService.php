@@ -7,6 +7,7 @@ use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
+use App\Services\Api\Validators\FolderValidator;
 
 class FolderService
 {
@@ -17,7 +18,7 @@ class FolderService
      * @return array
      * @throws FolderNameExistsException
      */
-    public function store(string $name, User $user, FileAndFolderValidatorService $validator): array
+    public function store(string $name, User $user, FolderValidator $validator): Folder
     {
         $validator->checkFolderNameExists($user, $name);
 
@@ -26,10 +27,7 @@ class FolderService
             'name'    => $name
         ]);
 
-        return [
-            'id'   => $folder->id,
-            'name' => $folder->name,
-        ];
+        return $folder;
     }
 
     public function getFoldersByUser(User $user): array
@@ -52,7 +50,7 @@ class FolderService
      * @throws FolderNameExistsException
      * @throws FolderNotFoundException
      */
-    public function rename(string $name, User $user, int $folderID, FileAndFolderValidatorService $validator): Folder
+    public function rename(string $name, User $user, int $folderID, FolderValidator $validator): Folder
     {
         $folder = Folder::where('user_id', $user->id)
             ->where('id', $folderID)
@@ -79,7 +77,6 @@ class FolderService
      */
     public function delete(array $folderIds, User $user): void
     {
-//        $absentFolderId      = NULL;
         $allFoldersFound = true;
 
         foreach ($folderIds as $folderID) {
@@ -88,7 +85,6 @@ class FolderService
                 ->first();
 
             if (empty($folder)) {
-//                $absentFolderId = $id;
                 $allFoldersFound = false;
                 break;
             }

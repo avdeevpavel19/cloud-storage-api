@@ -8,8 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateFolderRequest;
 use App\Http\Requests\Api\DeleteFolderRequest;
 use App\Http\Requests\Api\UpdateNameFolderRequest;
-use App\Services\Api\FileAndFolderValidatorService;
 use App\Services\Api\FolderService;
+use App\Services\Api\Validators\FolderValidator;
 use App\Traits\HttpResponse;
 use Exception;
 
@@ -17,13 +17,13 @@ class FolderController extends Controller
 {
     use HttpResponse;
 
-    private FolderService                 $service;
-    private FileAndFolderValidatorService $validatorService;
+    private FolderService   $service;
+    private FolderValidator $folderValidator;
 
-    public function __construct(FolderService $service, FileAndFolderValidatorService $validatorService)
+    public function __construct(FolderService $service, FolderValidator $folderValidator)
     {
-        $this->service          = $service;
-        $this->validatorService = $validatorService;
+        $this->service         = $service;
+        $this->folderValidator = $folderValidator;
     }
 
     public function store(CreateFolderRequest $request, FolderService $service)
@@ -31,10 +31,13 @@ class FolderController extends Controller
         try {
             $currentUser   = \Auth::user();
             $validatedData = $request->validated();
-            $createdFolder = $service->store($validatedData['name'], $currentUser, $this->validatorService);
+            $folder        = $service->store($validatedData['name'], $currentUser, $this->folderValidator);
 
-            if ($createdFolder) {
-                return $createdFolder;
+            if ($folder) {
+                return [
+                    'id'   => $folder->id,
+                    'name' => $folder->name,
+                ];
             }
         } catch (FolderNameExistsException) {
             throw new FolderNameExistsException('У вас уже есть папка с таким названием');
@@ -47,9 +50,9 @@ class FolderController extends Controller
     {
         try {
             $currentUser = \Auth::user();
-            $result      = $this->service->getFoldersByUser($currentUser);
+            $folders     = $this->service->getFoldersByUser($currentUser);
 
-            return $this->displayList($result);
+            return $this->displayList($folders);
         } catch (Exception) {
             return $this->error('Unknown error');
         }
@@ -60,10 +63,13 @@ class FolderController extends Controller
         try {
             $validationData = $request->validated();
             $currentUser    = \Auth::user();
-            $folder         = $this->service->rename($validationData['name'], $currentUser, $id, $this->validatorService);
+            $folder         = $this->service->rename($validationData['name'], $currentUser, $id, $this->folderValidator);
 
             if ($folder) {
-                return $folder;
+                return [
+                    'id'   => $folder->id,
+                    'name' => $folder->name,
+                ];
             }
         } catch (FolderNotFoundException) {
             throw new FolderNotFoundException('Указанная папка не найдена');

@@ -13,8 +13,9 @@ use App\Http\Requests\Api\UpdateNameFileRequest;
 use App\Http\Requests\Api\UploadFileRequest;
 use App\Models\File;
 use App\Models\Folder;
-use App\Services\Api\FileAndFolderValidatorService;
 use App\Services\Api\FileService;
+use App\Services\Api\Validators\FileValidator;
+use App\Services\Api\Validators\FolderValidator;
 use App\Traits\HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,13 +25,15 @@ class FileController extends Controller
 {
     use HttpResponse;
 
-    private FileService                   $service;
-    private FileAndFolderValidatorService $validatorService;
+    private FileService     $service;
+    private FolderValidator $folderValidator;
+    private FileValidator   $fileValidator;
 
-    public function __construct(FileService $service, FileAndFolderValidatorService $validatorService)
+    public function __construct(FileService $service)
     {
-        $this->service          = $service;
-        $this->validatorService = $validatorService;
+        $this->service         = $service;
+        $this->folderValidator = new FolderValidator;
+        $this->fileValidator   = new FileValidator;
     }
 
     public function store(UploadFileRequest $request): array
@@ -39,12 +42,11 @@ class FileController extends Controller
             $validatedData = $request->validated();
             $currentUser   = \Auth::user();
 
-            $result = $this->service->upload($validatedData['file'], $validatedData, $currentUser, $this->validatorService);
+            $result = $this->service->upload($validatedData['file'], $validatedData, $currentUser, $this->folderValidator, $this->fileValidator);
 
             if ($result) {
                 $uploadedFile = [
                     'id'         => $result->id,
-//                    'user_id'    => $result->user_id,
                     'folder_id'  => $result->folder_id,
                     'file'       => $result->file,
                     'name'       => $result->name,
@@ -57,8 +59,6 @@ class FileController extends Controller
             }
 
             return $uploadedFile;
-//        } catch (FileNotFoundException) {
-//            throw new FileNotFoundException('Файл не найден');
         } catch (diskSpaceExhaustedException) {
             throw new diskSpaceExhaustedException('Превышено допустимое дисковое пространство');
         } catch (FolderNotFoundException) {
@@ -155,7 +155,7 @@ class FileController extends Controller
         try {
             $validationData = $request->validated();
             $currentUser    = \Auth::user();
-            $file           = $this->service->rename($validationData['name'], $fileID, $currentUser, $this->validatorService);
+            $file           = $this->service->rename($validationData['name'], $fileID, $currentUser, $this->fileValidator);
 
             $fileData = [
                 'id'        => $file->id,

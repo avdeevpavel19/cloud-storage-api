@@ -9,33 +9,32 @@ use App\Exceptions\FilesNotFoundException;
 use App\Exceptions\FolderNotFoundException;
 use App\Models\File;
 use App\Models\User;
+use App\Services\Api\Validators\FileValidator;
+use App\Services\Api\Validators\FolderValidator;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 
 class FileService
 {
     /**
-     * @param UploadedFile                  $file
-     * @param array                         $data
-     * @param User                          $user
-     * @param FileAndFolderValidatorService $validator
+     * @param UploadedFile    $file
+     * @param array           $data
+     * @param User            $user
+     * @param FolderValidator $folderValidator
+     * @param FileValidator   $fileValidator
      *
      * @return File
      * @throws FileNameExistsException
      * @throws FolderNotFoundException
      * @throws diskSpaceExhaustedException
      */
-    public function upload(UploadedFile $file, array $data, User $user, FileAndFolderValidatorService $validator): File
+    public function upload(UploadedFile $file, array $data, User $user, FolderValidator $folderValidator, FileValidator $fileValidator): File
     {
         $fileSize          = $file->getSize();
         $fileSizeInMB      = $fileSize / (1024 * 1024);
         $formattedFileSize = number_format($fileSizeInMB, 2);
 
-//        if (empty($file)) {
-//            throw new FileNotFoundException;
-//        }
-
-        $format   = pathinfo($file->getClientOriginalName())['extension'];
+        $format = pathinfo($file->getClientOriginalName())['extension'];
 
         $uid = \Str::uuid();
 
@@ -43,8 +42,8 @@ class FileService
 
         $updatedDiskSpace = (float)$user->occupied_disk_space + (float)$formattedFileSize;
 
-        $validator->checkFolderIdExists($user, $data['folder_id']);
-        $validator->checkFileNameExists($user, $data['name']);
+        $folderValidator->checkFolderIdExists($user, $data['folder_id']);
+        $fileValidator->checkFileNameExists($user, $data['name']);
 
         if ($updatedDiskSpace >= 100) {
             throw new diskSpaceExhaustedException;
@@ -68,16 +67,16 @@ class FileService
     }
 
     /**
-     * @param string                        $fileName
-     * @param int                           $fileID
-     * @param User                          $user
-     * @param FileAndFolderValidatorService $validator
+     * @param string        $fileName
+     * @param int           $fileID
+     * @param User          $user
+     * @param FileValidator $validator
      *
      * @return File
      * @throws FileNameExistsException
      * @throws FileNotFoundException
      */
-    public function rename(string $fileName, int $fileID, User $user, FileAndFolderValidatorService $validator): File
+    public function rename(string $fileName, int $fileID, User $user, FileValidator $validator): File
     {
         $file = File::where('user_id', $user->id)
             ->where('id', $fileID)
