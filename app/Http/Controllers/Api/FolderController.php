@@ -49,10 +49,18 @@ class FolderController extends Controller
     public function getFoldersByUser()
     {
         try {
-            $currentUser = \Auth::user();
-            $folders     = $this->service->getFoldersByUser($currentUser);
+            $user = \Auth::user();
 
-            return $this->displayList($folders);
+            $userFolders = $user->folders()->where('user_id', $user->id)->paginate(100);
+
+            foreach ($userFolders as $folder) {
+                $folderList[] = [
+                    'id'   => $folder->id,
+                    'name' => $folder->name,
+                ];
+            }
+
+            return $this->displayList($folderList);
         } catch (Exception) {
             return $this->error('Unknown error');
         }

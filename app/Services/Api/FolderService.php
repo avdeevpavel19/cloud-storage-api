@@ -30,21 +30,6 @@ class FolderService
         return $folder;
     }
 
-    public function getFoldersByUser(User $user): array
-    {
-        $userFolders = Folder::where('user_id', $user->id)->paginate(8);
-        $folderList  = [];
-
-        foreach ($userFolders as $userFolder) {
-            $folderList[] = [
-                'id'   => $userFolder->id,
-                'name' => $userFolder->name,
-            ];
-        }
-
-        return $folderList;
-    }
-
     /**
      * @return Folder
      * @throws FolderNameExistsException
