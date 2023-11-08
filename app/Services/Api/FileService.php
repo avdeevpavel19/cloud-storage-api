@@ -2,7 +2,7 @@
 
 namespace App\Services\Api;
 
-use App\Exceptions\diskSpaceExhaustedException;
+use App\Exceptions\DiskSpaceExhaustedException;
 use App\Exceptions\FileNameExistsException;
 use App\Exceptions\FileNotFoundException;
 use App\Exceptions\FilesNotFoundException;
@@ -26,7 +26,7 @@ class FileService
      * @return File
      * @throws FileNameExistsException
      * @throws FolderNotFoundException
-     * @throws diskSpaceExhaustedException
+     * @throws DiskSpaceExhaustedException
      */
     public function upload(UploadedFile $file, array $data, User $user, FolderValidator $folderValidator, FileValidator $fileValidator): File
     {
@@ -46,7 +46,7 @@ class FileService
         $fileValidator->checkFileNameExists($user, $data['name']);
 
         if ($updatedDiskSpace >= 100) {
-            throw new diskSpaceExhaustedException;
+            throw new DiskSpaceExhaustedException;
         }
 
         $user->occupied_disk_space = $updatedDiskSpace;

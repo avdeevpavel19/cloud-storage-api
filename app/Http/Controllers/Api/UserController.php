@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\InvalidEmailUpdateTokenException;
-use App\Exceptions\UserNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SendEmailUpdateRequest;
 use App\Http\Requests\Api\UpdateLoginUserRequest;
@@ -48,8 +47,6 @@ class UserController extends Controller
             $currentUser    = \Auth::user();
 
             $this->service->updateLogin($validationData['login'], $currentUser);
-        } catch (UserNotFoundException) {
-            return $this->error('Пользователь не найден');
         } catch (\Exception) {
             throw new Exception('Unknown error');
         }

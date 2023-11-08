@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\diskSpaceExhaustedException;
+use App\Exceptions\DiskSpaceExhaustedException;
 use App\Exceptions\FileNameExistsException;
 use App\Exceptions\FileNotFoundException;
 use App\Exceptions\FilesNotFoundException;
@@ -59,8 +59,8 @@ class FileController extends Controller
             }
 
             return $uploadedFile;
-        } catch (diskSpaceExhaustedException) {
-            throw new diskSpaceExhaustedException('Превышено допустимое дисковое пространство');
+        } catch (DiskSpaceExhaustedException) {
+            throw new DiskSpaceExhaustedException('Превышено допустимое дисковое пространство');
         } catch (FolderNotFoundException) {
             throw new FolderNotFoundException('Указанная папка не найдена');
         } catch (FileNameExistsException) {
@@ -74,7 +74,7 @@ class FileController extends Controller
     {
         try {
             $currentUserID = \Auth::id();
-            $userFiles     = File::where('user_id', $currentUserID)->paginate(8);
+            $userFiles     = File::where('user_id', $currentUserID)->paginate(100);
 
             $userFilesData = [];
 
@@ -159,7 +159,6 @@ class FileController extends Controller
 
             $fileData = [
                 'id'        => $file->id,
-//                'user_id'   => $file->user_id,
                 'folder_id' => $file->folder_id,
                 'file'      => $file->file,
                 'name'      => $file->name,
