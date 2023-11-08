@@ -12,10 +12,6 @@ use App\Services\Api\Validators\FolderValidator;
 class FolderService
 {
     /**
-     * @param string $name
-     * @param User   $user
-     *
-     * @return array
      * @throws FolderNameExistsException
      */
     public function store(string $name, User $user, FolderValidator $validator): Folder
@@ -31,7 +27,6 @@ class FolderService
     }
 
     /**
-     * @return Folder
      * @throws FolderNameExistsException
      * @throws FolderNotFoundException
      */
@@ -54,10 +49,6 @@ class FolderService
     }
 
     /**
-     * @param int[] $folderIds
-     * @param User  $user
-     *
-     * @return void
      * @throws FolderNotFoundException
      */
     public function delete(array $folderIds, User $user): void

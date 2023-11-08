@@ -37,7 +37,6 @@ class PasswordResetService
     }
 
     /**
-     * @return void
      * @throws InvalidResetPasswordLinkException
      */
     public function reset(array $data): void
@@ -49,7 +48,7 @@ class PasswordResetService
             ->first();
 
         if ($resetTokenRecord == NULL || now()->subHours(2) > $resetTokenRecord->created_at) {
-            throw new InvalidResetPasswordLinkException('Недействительная ссылка для сброса пароля');
+            throw new InvalidResetPasswordLinkException;
         }
 
         $userWithEmail = User::where('email', $resetTokenRecord->email)->first();

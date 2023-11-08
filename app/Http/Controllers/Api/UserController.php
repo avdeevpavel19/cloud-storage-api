@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\BaseException;
+use App\Exceptions\EmailUpdateException;
 use App\Exceptions\InvalidEmailUpdateTokenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SendEmailUpdateRequest;
@@ -61,6 +62,8 @@ class UserController extends Controller
         try {
             $validationData = $request->validated();
             $this->service->sendEmailUpdate($validationData['new_email']);
+        }catch (EmailUpdateException) {
+            throw new EmailUpdateException('Невозможно обновить электронную почту пользователя');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');

@@ -14,7 +14,7 @@ class VerificationService
     public function sendVerificationNotification(User $user): void
     {
         if ($user->hasVerifiedEmail()) {
-            throw new EmailAlreadyVerifiedException();
+            throw new EmailAlreadyVerifiedException;
         }
 
         $user->sendEmailVerificationNotification();

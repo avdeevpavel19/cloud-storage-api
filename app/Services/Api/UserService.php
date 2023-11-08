@@ -2,7 +2,7 @@
 
 namespace App\Services\Api;
 
-use App\Exceptions\BaseException;
+use App\Exceptions\EmailUpdateException;
 use App\Exceptions\InvalidEmailUpdateTokenException;
 use App\Mail\EmailUpdateMail;
 use App\Models\User;
@@ -18,10 +18,7 @@ class UserService
     }
 
     /**
-     * @param string $email
-     *
-     * @return void
-     * @throws BaseException
+     * @throws EmailUpdateException
      */
     public function sendEmailUpdate(string $email): void
     {
@@ -53,13 +50,10 @@ class UserService
             return;
         }
 
-        throw new BaseException('Невозможно обновить электронную почту пользователя');
+        throw new EmailUpdateException;
     }
 
     /**
-     * @param string $emailUpdateToken
-     *
-     * @return void
      * @throws InvalidEmailUpdateTokenException
      */
     public function confirmNewEmailByToken(string $emailUpdateToken): void
@@ -69,7 +63,7 @@ class UserService
         $user = User::find($updatedEmailTokenRecord->user_id);
 
         if ($updatedEmailTokenRecord === NULL) {
-            throw new InvalidEmailUpdateTokenException('Не валидный токен для обновления почты');
+            throw new InvalidEmailUpdateTokenException;
         }
 
         $user->email = $updatedEmailTokenRecord->email;

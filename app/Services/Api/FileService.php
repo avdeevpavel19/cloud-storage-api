@@ -17,16 +17,9 @@ use Illuminate\Http\UploadedFile;
 class FileService
 {
     /**
-     * @param UploadedFile    $file
-     * @param array           $data
-     * @param User            $user
-     * @param FolderValidator $folderValidator
-     * @param FileValidator   $fileValidator
-     *
-     * @return File
+     * @throws DiskSpaceExhaustedException
      * @throws FileNameExistsException
      * @throws FolderNotFoundException
-     * @throws DiskSpaceExhaustedException
      */
     public function upload(UploadedFile $file, array $data, User $user, FolderValidator $folderValidator, FileValidator $fileValidator): File
     {
@@ -67,12 +60,6 @@ class FileService
     }
 
     /**
-     * @param string        $fileName
-     * @param int           $fileID
-     * @param User          $user
-     * @param FileValidator $validator
-     *
-     * @return File
      * @throws FileNameExistsException
      * @throws FileNotFoundException
      */
@@ -95,10 +82,6 @@ class FileService
     }
 
     /**
-     * @param array $fileIds
-     * @param User  $user
-     *
-     * @return void
      * @throws FilesNotFoundException
      */
     public function destroy(array $fileIds, User $user): void

@@ -39,8 +39,8 @@ class PasswordResetController extends Controller
         try {
             $validationData = $request->validated();
             $this->service->reset($validationData);
-        } catch (InvalidResetPasswordLinkException $invalidResetLinkException) {
-            return $this->error($invalidResetLinkException->getMessage());
+        } catch (InvalidResetPasswordLinkException) {
+            throw new InvalidResetPasswordLinkException('Недействительная ссылка для сброса пароля');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');
