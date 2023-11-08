@@ -21,7 +21,7 @@ class LoginController extends Controller
             $user          = $service->loginUser($validatedData);
 
             if (empty($user)) {
-                return 'Неверный логин или пароль';
+                return $this->info('Неверный логин или пароль');
             }
 
             return $user;
@@ -31,11 +31,13 @@ class LoginController extends Controller
         }
     }
 
-    public function logout()
+    public function logout(): string
     {
         try {
             $user = \Auth::user();
             $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
+
+            return $this->info('Вы вышли из системы');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');

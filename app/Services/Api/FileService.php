@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Api\Validators\FileValidator;
 use App\Services\Api\Validators\FolderValidator;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 
 class FileService
@@ -63,11 +64,9 @@ class FileService
      * @throws FileNameExistsException
      * @throws FileNotFoundException
      */
-    public function rename(string $fileName, int $fileID, User $user, FileValidator $validator): File
+    public function rename(string $fileName, int $fileID, User $user, FileValidator $validator): Model
     {
-        $file = File::where('user_id', $user->id)
-            ->where('id', $fileID)
-            ->first();
+        $file = $user->files()->where('user_id', $user->id)->where('id', $fileID)->first();
 
         $validator->checkFileNameExists($user, $fileName);
 
@@ -86,9 +85,7 @@ class FileService
      */
     public function destroy(array $fileIds, User $user): void
     {
-        $filesToDelete = File::where('user_id', $user->id)
-            ->whereIn('id', $fileIds)
-            ->get();
+        $filesToDelete = $user->files()->where('user_id', $user->id)->whereIn('id', $fileIds)->get();
 
         if ($filesToDelete->isEmpty() || $filesToDelete->count() !== count($fileIds)) {
             throw new FilesNotFoundException;

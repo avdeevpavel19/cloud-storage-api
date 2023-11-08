@@ -38,4 +38,9 @@ trait HttpResponse
     {
         return response()->json(['data' => $data, 'next_page' => $nextPage])->setStatusCode(200);
     }
+
+    public function info(string $message)
+    {
+        return response()->json(['message' => $message])->setStatusCode(200);
+    }
 }

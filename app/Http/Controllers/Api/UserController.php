@@ -25,44 +25,49 @@ class UserController extends Controller
         $this->service = $service;
     }
 
-    public function getInfo()
+    public function getInfo(): array
     {
         try {
             $currentUser = \Auth::user();
 
-            $userInfo = [
+            return [
                 'id'                  => $currentUser->id,
                 'login'               => $currentUser->login,
                 'email'               => $currentUser->email,
                 'occupied_disk_space' => $currentUser->occupied_disk_space,
             ];
-
-            return $userInfo;
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
 
-    public function updateLogin(UpdateLoginUserRequest $request): JsonResponse
+    public function updateLogin(UpdateLoginUserRequest $request): array
     {
         try {
             $validationData = $request->validated();
             $currentUser    = \Auth::user();
 
-            $this->service->updateLogin($validationData['login'], $currentUser);
+            $updatedLogin = $this->service->updateLogin($validationData['login'], $currentUser);
+
+            return [
+                'id'    => $updatedLogin->id,
+                'login' => $updatedLogin->login
+            ];
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
 
-    public function sendEmailUpdate(SendEmailUpdateRequest $request)
+    public function sendEmailUpdate(SendEmailUpdateRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();
             $this->service->sendEmailUpdate($validationData['new_email']);
-        }catch (EmailUpdateException) {
+
+            return $this->info('Вам на почту отправлено письмо для сброса почты');
+        } catch (EmailUpdateException) {
             throw new EmailUpdateException('Невозможно обновить электронную почту пользователя');
         } catch (Exception $e) {
             Log::error($e->getMessage());
@@ -70,12 +75,14 @@ class UserController extends Controller
         }
     }
 
-    public function updateEmail()
+    public function updateEmail(): JsonResponse
     {
         try {
             $hashFromURL = \Request::segment(4);
 
             $this->service->confirmNewEmailByToken($hashFromURL);
+
+            return $this->info('Почта успешно изменена');
         } catch (InvalidEmailUpdateTokenException) {
             return $this->error('Не валидный токен для обновления почты');
         } catch (Exception $e) {

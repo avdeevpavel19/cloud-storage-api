@@ -23,22 +23,26 @@ class PasswordResetController extends Controller
         $this->service = $service;
     }
 
-    public function sendLinkEmail(PasswordResetSendLinkEmailRequest $request)
+    public function sendLinkEmail(PasswordResetSendLinkEmailRequest $request): string
     {
         try {
             $validatedData = $request->validated();
             $this->service->sendLinkEmail($validatedData);
+
+            return $this->info('Вам на почту отправлено письмо для сброса пароля');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
 
-    public function reset(PasswordResetRequest $request)
+    public function reset(PasswordResetRequest $request): string
     {
         try {
             $validationData = $request->validated();
             $this->service->reset($validationData);
+
+            return $this->info('Пароль успешно сброшен');
         } catch (InvalidResetPasswordLinkException) {
             throw new InvalidResetPasswordLinkException('Недействительная ссылка для сброса пароля');
         } catch (Exception $e) {

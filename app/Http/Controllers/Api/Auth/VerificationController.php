@@ -7,11 +7,14 @@ use App\Exceptions\EmailAlreadyVerifiedException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Api\Auth\VerificationService;
+use App\Traits\HttpResponse;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
 class VerificationController extends Controller
 {
+    use HttpResponse;
+
     private VerificationService $service;
 
     public function __construct(VerificationService $service)
@@ -19,11 +22,13 @@ class VerificationController extends Controller
         $this->service = $service;
     }
 
-    public function sendVerificationNotification()
+    public function sendVerificationNotification(): string
     {
         try {
-            $user = \Auth::user();
-            $this->service->sendVerificationNotification($user);
+            $currentUser = \Auth::user();
+            $this->service->sendVerificationNotification($currentUser);
+
+            return $this->info('Вам на почту отправлено письмо для верификацрии');
         } catch (EmailAlreadyVerifiedException) {
             throw new EmailAlreadyVerifiedException('Почта уже верифицирована');
         } catch (Exception $e) {
@@ -32,11 +37,15 @@ class VerificationController extends Controller
         }
     }
 
-    public function verify()
+    public function verify(): string
     {
         try {
             $user = User::find(\Auth::id());
             $this->service->verify($user);
+
+            return $this->info('Ваша почта успешно верифицирована');
+        } catch (EmailAlreadyVerifiedException) {
+            throw new EmailAlreadyVerifiedException('Почта уже верифицирована');
         } catch (Exception $e) {
             Log::error($e->getMessage());
             throw new BaseException('Unknown error');

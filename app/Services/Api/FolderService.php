@@ -4,10 +4,10 @@ namespace App\Services\Api;
 
 use App\Exceptions\FolderNameExistsException;
 use App\Exceptions\FolderNotFoundException;
-use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
 use App\Services\Api\Validators\FolderValidator;
+use Illuminate\Database\Eloquent\Model;
 
 class FolderService
 {
@@ -30,11 +30,9 @@ class FolderService
      * @throws FolderNameExistsException
      * @throws FolderNotFoundException
      */
-    public function rename(string $name, User $user, int $folderID, FolderValidator $validator): Folder
+    public function rename(string $name, User $user, int $folderID, FolderValidator $validator): Model
     {
-        $folder = Folder::where('user_id', $user->id)
-            ->where('id', $folderID)
-            ->first();
+        $folder = $user->folders()->where('user_id', $user->id)->where('id', $folderID)->first();
 
         $validator->checkFolderNameExists($user, $name);
 
@@ -56,9 +54,7 @@ class FolderService
         $allFoldersFound = true;
 
         foreach ($folderIds as $folderID) {
-            $folder = Folder::where('user_id', $user->id)
-                ->where('id', $folderID)
-                ->first();
+            $folder = $user->folders()->where('user_id', $user->id)->where('id', $folderID)->first();
 
             if (empty($folder)) {
                 $allFoldersFound = false;
@@ -71,11 +67,8 @@ class FolderService
         }
 
         foreach ($folderIds as $folderID) {
-            $folder = Folder::where('user_id', $user->id)
-                ->where('id', $folderID)
-                ->first();
-
-            File::where('folder_id', $folder->id)->update(['deleted_at' => now()]);
+            $folder = $user->folders()->where('user_id', $user->id)->where('id', $folderID)->first();
+            $user->files()->where('folder_id', $folder->id)->update(['deleted_at' => now()]);
 
             $folder->delete();
         }

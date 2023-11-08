@@ -23,7 +23,7 @@ class VerificationService
     public function verify(User $user): void
     {
         if ($user->hasVerifiedEmail()) {
-            return;
+            throw new EmailAlreadyVerifiedException;
         }
 
         if ($user->markEmailAsVerified()) {
