@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\BaseException;
 use App\Exceptions\DiskSpaceExhaustedException;
 use App\Exceptions\FileNameExistsException;
 use App\Exceptions\FileNotFoundException;
@@ -17,9 +18,10 @@ use App\Services\Api\FileService;
 use App\Services\Api\Validators\FileValidator;
 use App\Services\Api\Validators\FolderValidator;
 use App\Traits\HttpResponse;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Mockery\Exception;
+use Illuminate\Support\Facades\Log;
 
 class FileController extends Controller
 {
@@ -65,8 +67,9 @@ class FileController extends Controller
             throw new FolderNotFoundException('Указанная папка не найдена');
         } catch (FileNameExistsException) {
             throw new FileNameExistsException('У вас уже есть файл с таким названием');
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage());
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -93,8 +96,9 @@ class FileController extends Controller
             }
 
             return $this->displayList($userFilesData);
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -125,8 +129,9 @@ class FileController extends Controller
             ];
 
             return $userFileData;
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -145,8 +150,9 @@ class FileController extends Controller
             $filePath = storage_path('app/public/' . $file->path);
 
             return response()->download($filePath);
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -173,8 +179,9 @@ class FileController extends Controller
             throw new FileNameExistsException('У вас уже есть файл с таким названием');
         } catch (FileNotFoundException) {
             throw new FileNotFoundException('Файл не найден');
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -186,8 +193,9 @@ class FileController extends Controller
             $this->service->destroy($validationData['ids'], $currentUser);
         } catch (FilesNotFoundException) {
             throw new FilesNotFoundException('Один или несколько файлов не найдены');
-        } catch (\Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -210,8 +218,9 @@ class FileController extends Controller
             }
 
             return (int)$totalSizeFilesInFolder;
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -228,8 +237,9 @@ class FileController extends Controller
             }
 
             return (int)$totalSizeFiles;
-        } catch (Exception) {
-            throw new \Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 }

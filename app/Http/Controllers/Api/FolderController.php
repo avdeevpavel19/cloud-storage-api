@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\BaseException;
 use App\Exceptions\FolderNameExistsException;
 use App\Exceptions\FolderNotFoundException;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ use App\Services\Api\FolderService;
 use App\Services\Api\Validators\FolderValidator;
 use App\Traits\HttpResponse;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class FolderController extends Controller
 {
@@ -41,8 +43,9 @@ class FolderController extends Controller
             }
         } catch (FolderNameExistsException) {
             throw new FolderNameExistsException('У вас уже есть папка с таким названием');
-        } catch (\Exception) {
-            return $this->error('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -61,8 +64,9 @@ class FolderController extends Controller
             }
 
             return $this->displayList($folderList);
-        } catch (Exception) {
-            return $this->error('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -83,8 +87,9 @@ class FolderController extends Controller
             throw new FolderNotFoundException('Указанная папка не найдена');
         } catch (FolderNameExistsException) {
             throw new FolderNameExistsException('У вас уже есть папка с таким названием');
-        } catch (Exception) {
-            return 'Unknown error';
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -96,8 +101,9 @@ class FolderController extends Controller
             $this->service->delete($validationData['ids'], $currentUser);
         } catch (FolderNotFoundException) {
             throw new FolderNotFoundException('Указанная папка не найдена');
-        } catch (Exception) {
-            return 'Unknown error';
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 }

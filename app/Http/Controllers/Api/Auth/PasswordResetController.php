@@ -9,6 +9,8 @@ use App\Http\Requests\Api\Auth\PasswordResetRequest;
 use App\Http\Requests\Api\Auth\PasswordResetSendLinkEmailRequest;
 use App\Services\Api\Auth\PasswordResetService;
 use App\Traits\HttpResponse;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class PasswordResetController extends Controller
 {
@@ -26,7 +28,8 @@ class PasswordResetController extends Controller
         try {
             $validatedData = $request->validated();
             $this->service->sendLinkEmail($validatedData);
-        } catch (BaseException) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
@@ -38,7 +41,8 @@ class PasswordResetController extends Controller
             $this->service->reset($validationData);
         } catch (InvalidResetPasswordLinkException $invalidResetLinkException) {
             return $this->error($invalidResetLinkException->getMessage());
-        } catch (BaseException) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }

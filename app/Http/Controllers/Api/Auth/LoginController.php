@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Services\Api\Auth\LoginService;
 use App\Traits\HttpResponse;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
@@ -23,7 +25,8 @@ class LoginController extends Controller
             }
 
             return $user;
-        } catch (\Exception) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
@@ -33,7 +36,8 @@ class LoginController extends Controller
         try {
             $user = \Auth::user();
             $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
-        } catch (BaseException) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }

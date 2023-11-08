@@ -7,6 +7,8 @@ use App\Exceptions\EmailAlreadyVerifiedException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Api\Auth\VerificationService;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class VerificationController extends Controller
 {
@@ -24,7 +26,8 @@ class VerificationController extends Controller
             $this->service->sendVerificationNotification($user);
         } catch (EmailAlreadyVerifiedException) {
             throw new EmailAlreadyVerifiedException('Почта уже верифицирована');
-        } catch (BaseException) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }
@@ -34,7 +37,8 @@ class VerificationController extends Controller
         try {
             $user = User::find(\Auth::id());
             $this->service->verify($user);
-        } catch (BaseException) {
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
             throw new BaseException('Unknown error');
         }
     }

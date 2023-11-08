@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\BaseException;
 use App\Exceptions\InvalidEmailUpdateTokenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SendEmailUpdateRequest;
 use App\Http\Requests\Api\UpdateLoginUserRequest;
 use App\Services\Api\UserService;
 use App\Traits\HttpResponse;
+use Exception;
 use Illuminate\Http\JsonResponse;
-use Mockery\Exception;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -35,8 +37,9 @@ class UserController extends Controller
             ];
 
             return $userInfo;
-        } catch (\Exception) {
-            throw new Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -47,8 +50,9 @@ class UserController extends Controller
             $currentUser    = \Auth::user();
 
             $this->service->updateLogin($validationData['login'], $currentUser);
-        } catch (\Exception) {
-            throw new Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -57,8 +61,9 @@ class UserController extends Controller
         try {
             $validationData = $request->validated();
             $this->service->sendEmailUpdate($validationData['new_email']);
-        } catch (\Exception) {
-            throw new Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 
@@ -70,8 +75,9 @@ class UserController extends Controller
             $this->service->confirmNewEmailByToken($hashFromURL);
         } catch (InvalidEmailUpdateTokenException) {
             return $this->error('Не валидный токен для обновления почты');
-        } catch (\Exception) {
-            throw new Exception('Unknown error');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw new BaseException('Unknown error');
         }
     }
 }
