@@ -89,7 +89,7 @@ class FileService
         }
 
         $file->name = $fileName;
-        $file->save();
+        $file->saveOrFail();
 
         return $file;
     }
@@ -114,7 +114,7 @@ class FileService
         $totalSizeDeletedFiles = $filesToDelete->sum('sizeMB');
 
         $user->occupied_disk_space -= (float)$totalSizeDeletedFiles;
-        $user->save();
+        $user->saveOrFail();
 
         $filesToDelete->each(function ($file) {
             $file->delete();

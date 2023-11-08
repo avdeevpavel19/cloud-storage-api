@@ -48,7 +48,7 @@ class FolderService
         }
 
         $folder->name = $name;
-        $folder->save();
+        $folder->saveOrFail();
 
         return $folder;
     }
