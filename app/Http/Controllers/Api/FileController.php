@@ -18,7 +18,6 @@ use App\Services\Api\Validators\FolderValidator;
 use App\Traits\HttpResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class FileController extends Controller
@@ -181,7 +180,7 @@ class FileController extends Controller
         }
     }
 
-    public function deleteFiles(DeleteFileRequest $request): string
+    public function deleteFiles(DeleteFileRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();
@@ -197,12 +196,12 @@ class FileController extends Controller
         }
     }
 
-    public function getSizeFilesInFolder(Request $request): float
+    public function getSizeFilesInFolder(int $folderID): float
     {
         try {
             $currentUser = \Auth::user();
 
-            $userOwnedFolder = $currentUser->folders()->where('id', $request->folder_id)->where('user_id', $currentUser->id)->first();
+            $userOwnedFolder = $currentUser->folders()->where('id', $folderID)->where('user_id', $currentUser->id)->first();
 
             if ($userOwnedFolder === NULL) {
                 throw new FolderNotFoundException('У вас нет такой папки');

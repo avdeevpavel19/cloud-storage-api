@@ -18,7 +18,7 @@ class VerifyEmailMiddleware
         if (!$request->user() ||
             ($request->user() instanceof MustVerifyEmail &&
                 !$request->user()->hasVerifiedEmail())) {
-            return \response()->json(['message' => 'Ваша почта не подтверждена'], 403);
+            return \response()->json(['message' => 'Ваша почта не подтверждена.Сначала подтвердите почту'], 403);
         }
 
         return $next($request);

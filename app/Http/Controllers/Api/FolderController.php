@@ -90,7 +90,7 @@ class FolderController extends Controller
         }
     }
 
-    public function delete(DeleteFolderRequest $request): string
+    public function delete(DeleteFolderRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Api\Auth\VerificationService;
 use App\Traits\HttpResponse;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class VerificationController extends Controller
@@ -22,13 +23,13 @@ class VerificationController extends Controller
         $this->service = $service;
     }
 
-    public function sendVerificationNotification(): string
+    public function sendVerificationNotification(): JsonResponse
     {
         try {
             $currentUser = \Auth::user();
             $this->service->sendVerificationNotification($currentUser);
 
-            return $this->info('Вам на почту отправлено письмо для верификацрии');
+            return $this->info('Вам на почту отправлено письмо для верификации');
         } catch (EmailAlreadyVerifiedException) {
             throw new EmailAlreadyVerifiedException('Почта уже верифицирована');
         } catch (Exception $e) {
@@ -37,7 +38,7 @@ class VerificationController extends Controller
         }
     }
 
-    public function verify(): string
+    public function verify(): JsonResponse
     {
         try {
             $user = User::find(\Auth::id());

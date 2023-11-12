@@ -10,6 +10,7 @@ use App\Http\Requests\Api\Auth\PasswordResetSendLinkEmailRequest;
 use App\Services\Api\Auth\PasswordResetService;
 use App\Traits\HttpResponse;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class PasswordResetController extends Controller
@@ -23,7 +24,7 @@ class PasswordResetController extends Controller
         $this->service = $service;
     }
 
-    public function sendLinkEmail(PasswordResetSendLinkEmailRequest $request): string
+    public function sendLinkEmail(PasswordResetSendLinkEmailRequest $request): JsonResponse
     {
         try {
             $validatedData = $request->validated();
@@ -36,7 +37,7 @@ class PasswordResetController extends Controller
         }
     }
 
-    public function reset(PasswordResetRequest $request): string
+    public function reset(PasswordResetRequest $request): JsonResponse
     {
         try {
             $validationData = $request->validated();

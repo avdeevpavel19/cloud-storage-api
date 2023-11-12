@@ -8,6 +8,7 @@ use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Services\Api\Auth\LoginService;
 use App\Traits\HttpResponse;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
@@ -31,7 +32,7 @@ class LoginController extends Controller
         }
     }
 
-    public function logout(): string
+    public function logout(): JsonResponse
     {
         try {
             $user = \Auth::user();

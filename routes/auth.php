@@ -10,7 +10,7 @@ Route::post('user', [RegisterController::class, 'store']);
 Route::post('login', [LoginController::class, 'store']);
 
 Route::post('password/link', [PasswordResetController::class, 'sendLinkEmail']);
-Route::post('password/{token}', [PasswordResetController::class, 'reset']);
+Route::put('password/{token}', [PasswordResetController::class, 'reset']);
 
 Route::group(['middleware' => ['auth:api']], function () {
     Route::post('/email/verification-notification', [VerificationController::class, 'sendVerificationNotification']);

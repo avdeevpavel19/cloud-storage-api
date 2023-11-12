@@ -31,6 +31,6 @@ Route::group(['middleware' => ['auth:api', 'verified']], function () {
     Route::put('folders/{id}', [FolderController::class, 'rename']);
     Route::delete('folders/', [FolderController::class, 'delete']);
     Route::delete('files/', [FileController::class, 'deleteFiles']);
-    Route::get('folder/files-size', [FileController::class, 'getSizeFilesInFolder']);
+    Route::get('folder/files-size/{id}', [FileController::class, 'getSizeFilesInFolder']);
     Route::get('files-size', [FileController::class, 'getSizeFilesOnDisk']);
 });
